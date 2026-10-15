@@ -365,7 +365,7 @@ button.round {
 
 .game-list {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   margin-bottom: 16px;
 }
@@ -696,4 +696,95 @@ button.round {
 .chip.bad {
   background: var(--error);
   color: #fff;
+}
+
+/* kenken: ruled grid with thick cage outlines */
+.board.kenken {
+  --reserve: 250px;
+  border: 2.5px solid var(--line-strong);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 0 var(--tray);
+}
+
+.kenken .cell {
+  position: relative;
+  color: var(--accent);
+}
+
+.kenken .cell.related {
+  background: color-mix(in srgb, var(--accent) 8%, var(--tile));
+}
+
+.kenken .cell.selected {
+  background: color-mix(in srgb, var(--accent) 30%, var(--tile));
+}
+
+.kenken .cell.error {
+  color: var(--error);
+  background: var(--error-soft);
+}
+
+.cage-label {
+  position: absolute;
+  top: 4%;
+  left: 7%;
+  font-size: calc(100cqw / var(--cols) * 0.2);
+  font-weight: 700;
+  color: var(--fg);
+  line-height: 1;
+}
+
+.cage-label.wrong {
+  color: var(--error);
+}
+
+.kenken .notes {
+  padding-top: 18%;
+}
+
+/* takuzu: two colours of discs; given discs sit on a tinted square */
+.board.takuzu {
+  --reserve: 150px;
+  gap: 4px;
+  padding: 6px;
+  background: var(--tray);
+  border-radius: 14px;
+}
+
+.takuzu .cell {
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.takuzu .cell.given {
+  background: color-mix(in srgb, var(--accent) 10%, var(--tile));
+  box-shadow: none;
+  cursor: default;
+}
+
+.disc {
+  width: 72%;
+  height: 72%;
+  border-radius: 50%;
+  transition: transform 0.1s;
+}
+
+.disc.d0 {
+  background: var(--accent);
+  box-shadow: inset 0 -3px 0 var(--ink);
+}
+
+.disc.d1 {
+  background: #f5b82e;
+  box-shadow: inset 0 -3px 0 #c98a0c;
+}
+
+.takuzu .cell.given .disc {
+  width: 58%;
+  height: 58%;
+}
+
+.takuzu .cell.error {
+  box-shadow: inset 0 0 0 3px var(--error);
 }

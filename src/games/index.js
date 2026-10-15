@@ -2,6 +2,8 @@ import Sudoku from './sudoku/Sudoku.jsx'
 import Minesweeper from './minesweeper/Minesweeper.jsx'
 import Nonogram from './nonogram/Nonogram.jsx'
 import Queens from './queens/Queens.jsx'
+import KenKen from './kenken/KenKen.jsx'
+import Takuzu from './takuzu/Takuzu.jsx'
 
 // To add a game: build a component that takes { seed, solved, onSolve, onMistake }
 // and add it here. The daily rotation goes through this list in order.
@@ -38,6 +40,22 @@ export const GAMES = [
     rules: 'Place one queen in every row, column and colour region. Queens may not touch, not even diagonally.',
     help: 'Tap once for a cross, twice for a queen.',
     Component: Queens,
+  },
+  {
+    id: 'kenken',
+    name: 'KenKen',
+    color: '#2f9e44',
+    rules: 'Fill the grid with 1–6 so no number repeats in a row or column. Each outlined cage must make its target using its operation.',
+    help: 'Tap a square, then a number. For − and ÷ the order of the numbers doesn’t matter. Notes work like in Sudoku.',
+    Component: KenKen,
+  },
+  {
+    id: 'takuzu',
+    name: 'Takuzu',
+    color: '#0e9aa7',
+    rules: 'Fill every square with one of two colours. Each row and column has equal amounts of both, no three in a row of the same colour, and no two rows or columns are identical.',
+    help: 'Tap a square to cycle: colour one, colour two, empty.',
+    Component: Takuzu,
   },
 ]
 
