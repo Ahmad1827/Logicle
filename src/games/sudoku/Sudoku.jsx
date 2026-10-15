@@ -1,41 +1,49 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createRng } from '../../lib/random.js'
-import { generateSudoku, N, BOX_ROWS, BOX_COLS } from './generate.js'
+import { EraseIcon, PencilIcon } from '../../icons.jsx'
+import { generateSudoku, N, BOX, PEERS } from './generate.js'
 
 function conflicts(grid) {
   const bad = new Set()
-  for (let i = 0; i < N * N; i++) {
-    if (!grid[i]) continue
-    for (let j = i + 1; j < N * N; j++) {
-      if (grid[i] !== grid[j]) continue
-      const [ri, ci, rj, cj] = [Math.floor(i / N), i % N, Math.floor(j / N), j % N]
-      const sameBox =
-        Math.floor(ri / BOX_ROWS) === Math.floor(rj / BOX_ROWS) &&
-        Math.floor(ci / BOX_COLS) === Math.floor(cj / BOX_COLS)
-      if (ri === rj || ci === cj || sameBox) bad.add(i).add(j)
-    }
-  }
+  grid.forEach((v, i) => {
+    if (v && PEERS[i].some((p) => grid[p] === v)) bad.add(i)
+  })
   return bad
 }
 
 export default function Sudoku({ seed, solved, onSolve }) {
   const { puzzle, solution } = useMemo(() => generateSudoku(createRng(seed)), [seed])
   const [grid, setGrid] = useState(puzzle)
+  const [notes, setNotes] = useState(() => Array(N * N).fill(0)) // bitmask of pencil marks
+  const [noteMode, setNoteMode] = useState(false)
   const [selected, setSelected] = useState(puzzle.indexOf(0))
   const bad = conflicts(grid)
 
   function enter(value) {
     if (solved || selected < 0 || puzzle[selected]) return
-    const next = [...grid]
-    next[selected] = value
-    setGrid(next)
-    if (next.every((v, i) => v === solution[i])) onSolve()
+    if (noteMode && value) {
+      if (grid[selected]) return
+      const next = [...notes]
+      next[selected] ^= 1 << value
+      setNotes(next)
+      return
+    }
+    const nextGrid = [...grid]
+    nextGrid[selected] = value
+    setGrid(nextGrid)
+    const nextNotes = [...notes]
+    nextNotes[selected] = 0
+    // Placing a number clears that number from the notes of every cell it sees.
+    if (value) PEERS[selected].forEach((p) => (nextNotes[p] &= ~(1 << value)))
+    setNotes(nextNotes)
+    if (nextGrid.every((v, i) => v === solution[i])) onSolve()
   }
 
   useEffect(() => {
     function onKey(e) {
-      if (e.key >= '1' && e.key <= String(N)) enter(Number(e.key))
+      if (e.key >= '1' && e.key <= '9') enter(Number(e.key))
       else if (['Backspace', 'Delete', '0'].includes(e.key)) enter(0)
+      else if (e.key === 'n' || e.key === 'N') setNoteMode((m) => !m)
       else {
         const move = { ArrowUp: -N, ArrowDown: N, ArrowLeft: -1, ArrowRight: 1 }[e.key]
         if (move === undefined) return
@@ -49,24 +57,35 @@ export default function Sudoku({ seed, solved, onSolve }) {
 
   const selRow = Math.floor(selected / N)
   const selCol = selected % N
+  const selBox = Math.floor(selRow / BOX) * BOX + Math.floor(selCol / BOX)
+  const selValue = grid[selected]
 
   return (
     <div className="stack">
-      <div className="board sudoku" style={{ '--cols': N }}>
+      <div className="board sudoku" style={{ '--cols': N, '--rows': N }}>
         {grid.map((v, i) => {
           const r = Math.floor(i / N)
           const c = i % N
+          const box = Math.floor(r / BOX) * BOX + Math.floor(c / BOX)
           const classes = ['cell']
           if (puzzle[i]) classes.push('given')
           if (i === selected) classes.push('selected')
-          else if (r === selRow || c === selCol) classes.push('related')
-          else if (v && v === grid[selected]) classes.push('related')
+          else if (v && v === selValue) classes.push('same')
+          else if (r === selRow || c === selCol || box === selBox) classes.push('related')
           if (bad.has(i)) classes.push('error')
-          if (c % BOX_COLS === BOX_COLS - 1 && c < N - 1) classes.push('edge-right')
-          if (r % BOX_ROWS === BOX_ROWS - 1 && r < N - 1) classes.push('edge-bottom')
+          if (c % BOX === BOX - 1 && c < N - 1) classes.push('edge-right')
+          if (r % BOX === BOX - 1 && r < N - 1) classes.push('edge-bottom')
           return (
             <button key={i} className={classes.join(' ')} onClick={() => setSelected(i)}>
-              {v || ''}
+              {v ? (
+                v
+              ) : notes[i] ? (
+                <span className="notes">
+                  {Array.from({ length: N }, (_, k) => (
+                    <span key={k}>{notes[i] & (1 << (k + 1)) ? k + 1 : ''}</span>
+                  ))}
+                </span>
+              ) : null}
             </button>
           )
         })}
@@ -77,8 +96,13 @@ export default function Sudoku({ seed, solved, onSolve }) {
             {k + 1}
           </button>
         ))}
+      </div>
+      <div className="tools">
+        <button className={noteMode ? 'active' : ''} onClick={() => setNoteMode((m) => !m)} disabled={solved}>
+          <PencilIcon /> Notes
+        </button>
         <button onClick={() => enter(0)} disabled={solved}>
-          ⌫
+          <EraseIcon /> Erase
         </button>
       </div>
     </div>

@@ -2,6 +2,26 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { GAMES, gameForPuzzle } from './games/index.js'
 import { dayKey, formatTime, msUntilTomorrow, puzzleNumber } from './lib/daily.js'
 import { currentStreak, loadResults, saveResults } from './lib/stats.js'
+import { MineIcon } from './icons.jsx'
+
+const SEEN_KEY = 'logicle-seen-help'
+
+function hasSeenHelp(id) {
+  try {
+    return JSON.parse(localStorage.getItem(SEEN_KEY) || '[]').includes(id)
+  } catch {
+    return false
+  }
+}
+
+function markHelpSeen(id) {
+  try {
+    const seen = JSON.parse(localStorage.getItem(SEEN_KEY) || '[]')
+    if (!seen.includes(id)) localStorage.setItem(SEEN_KEY, JSON.stringify([...seen, id]))
+  } catch {
+    // ignore
+  }
+}
 
 function useNow(interval = 1000) {
   const [now, setNow] = useState(Date.now)
@@ -12,18 +32,57 @@ function useNow(interval = 1000) {
   return now
 }
 
+function HelpSheet({ game, onClose }) {
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="sheet" onClick={(e) => e.stopPropagation()}>
+        <h2>{game.name}</h2>
+        <p>{game.rules}</p>
+        <p className="muted">{game.help}</p>
+        <button className="primary" onClick={onClose}>
+          Play
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function GameHead({ game, children, onHelp }) {
+  return (
+    <div className="game-head">
+      <h2>{game.name}</h2>
+      <div className="game-head-right">
+        {children}
+        {onHelp && (
+          <button className="round" onClick={onHelp} aria-label="How to play">
+            ?
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function PuzzleRunner({ game, seed, onFinish }) {
-  const start = useRef(Date.now())
+  const [showHelp, setShowHelp] = useState(() => !hasSeenHelp(game.id))
+  // The clock starts once the rules sheet is closed.
+  const start = useRef(showHelp ? null : Date.now())
   const done = useRef(false)
   const mistakesRef = useRef(0)
   const [mistakes, setMistakes] = useState(0)
   const [result, setResult] = useState(null)
   const now = useNow()
 
+  function closeHelp() {
+    markHelpSeen(game.id)
+    if (start.current === null) start.current = Date.now()
+    setShowHelp(false)
+  }
+
   const onSolve = useCallback(() => {
     if (done.current) return
     done.current = true
-    const r = { time: Date.now() - start.current, mistakes: mistakesRef.current }
+    const r = { time: Date.now() - (start.current ?? Date.now()), mistakes: mistakesRef.current }
     setResult(r)
     onFinish(r)
   }, [onFinish])
@@ -33,19 +92,20 @@ function PuzzleRunner({ game, seed, onFinish }) {
     setMistakes(mistakesRef.current)
   }, [])
 
+  const elapsed = result ? result.time : start.current === null ? 0 : Math.max(0, now - start.current)
+
   return (
     <section>
-      <div className="game-head">
-        <h2>
-          {game.emoji} {game.name}
-        </h2>
-        <span className="timer">
-          {formatTime(result ? result.time : now - start.current)}
-          {game.tracksMistakes && ` · 💥 ${mistakes}`}
-        </span>
-      </div>
-      <p className="rules">{game.rules}</p>
+      <GameHead game={game} onHelp={() => setShowHelp(true)}>
+        {game.tracksMistakes && mistakes > 0 && (
+          <span className="chip bad" title="Mines hit">
+            <MineIcon /> {mistakes}
+          </span>
+        )}
+        <span className="chip">{formatTime(elapsed)}</span>
+      </GameHead>
       <game.Component seed={seed} solved={!!result} onSolve={onSolve} onMistake={onMistake} />
+      {showHelp && <HelpSheet game={game} onClose={closeHelp} />}
     </section>
   )
 }
@@ -54,9 +114,9 @@ function DailyDone({ number, game, result, streak }) {
   const now = useNow()
   const [copied, setCopied] = useState(false)
   const text = [
-    `Logicle #${number} · ${game.emoji} ${game.name}`,
-    `⏱️ ${formatTime(result.time)}` + (game.tracksMistakes ? `  💥 ${result.mistakes}` : ''),
-    `🔥 ${streak}`,
+    `Logicle #${number} · ${game.name}`,
+    `Time ${formatTime(result.time)}` + (game.tracksMistakes ? ` · Mistakes ${result.mistakes}` : ''),
+    `Streak ${streak}`,
     window.location.origin + window.location.pathname,
   ].join('\n')
 
@@ -72,35 +132,33 @@ function DailyDone({ number, game, result, streak }) {
 
   return (
     <div className="panel">
-      <h3>Solved! 🎉</h3>
       <div className="stats">
         <div>
           <b>{formatTime(result.time)}</b>
-          <span>time</span>
+          <span>Time</span>
         </div>
         {game.tracksMistakes && (
           <div>
             <b>{result.mistakes}</b>
-            <span>mistakes</span>
+            <span>Mistakes</span>
           </div>
         )}
         <div>
           <b>{streak}</b>
-          <span>day streak</span>
+          <span>Streak</span>
         </div>
       </div>
       <button className="primary" onClick={share}>
-        {copied ? 'Copied!' : 'Share result'}
+        {copied ? 'Copied!' : 'Share'}
       </button>
-      <p className="muted">Next puzzle in {formatTime(msUntilTomorrow(new Date(now)))}</p>
+      <p className="muted">Next in {formatTime(msUntilTomorrow(new Date(now)))}</p>
     </div>
   )
 }
 
-function Daily({ today }) {
+function Daily({ today, game }) {
   const number = puzzleNumber(today)
   const key = dayKey(today)
-  const game = gameForPuzzle(number)
   const [results, setResults] = useState(loadResults)
   const [playing] = useState(() => !loadResults()[key])
   const result = results[key]
@@ -121,40 +179,48 @@ function Daily({ today }) {
       {playing ? (
         <PuzzleRunner game={game} seed={`daily-${key}`} onFinish={finish} />
       ) : (
-        <p className="rules">
-          Today's puzzle was {game.emoji} {game.name}. Come back tomorrow for a new one!
-        </p>
+        <GameHead game={game}>
+          <span className="chip">Solved</span>
+        </GameHead>
       )}
       {result && <DailyDone number={number} game={game} result={result} streak={currentStreak(results, today)} />}
     </>
   )
 }
 
-function Practice() {
-  const [current, setCurrent] = useState(null)
+function Practice({ current, onStart }) {
   const [result, setResult] = useState(null)
 
   function start(game) {
     setResult(null)
-    setCurrent({ game, seed: `practice-${Date.now()}-${Math.random()}` })
+    onStart({ game, seed: `practice-${Date.now()}-${Math.random()}` })
   }
 
   return (
     <>
-      <p className="rules">Play any game as many times as you like. Practice doesn't affect your streak.</p>
       <div className="game-list">
         {GAMES.map((g) => (
-          <button key={g.id} className={current?.game === g ? 'active' : ''} onClick={() => start(g)}>
-            {g.emoji} {g.name}
+          <button
+            key={g.id}
+            className={current?.game === g ? 'active' : ''}
+            style={{ '--accent': g.color }}
+            onClick={() => start(g)}
+          >
+            {g.name}
           </button>
         ))}
       </div>
       {current && <PuzzleRunner key={current.seed} game={current.game} seed={current.seed} onFinish={setResult} />}
       {result && (
         <div className="panel">
-          <h3>Solved in {formatTime(result.time)} 🎉</h3>
+          <div className="stats">
+            <div>
+              <b>{formatTime(result.time)}</b>
+              <span>Time</span>
+            </div>
+          </div>
           <button className="primary" onClick={() => start(current.game)}>
-            Play another
+            Again
           </button>
         </div>
       )}
@@ -165,6 +231,9 @@ function Practice() {
 export default function App() {
   const [today] = useState(() => new Date())
   const [tab, setTab] = useState('daily')
+  const [practice, setPractice] = useState(null)
+  const dailyGame = gameForPuzzle(puzzleNumber(today))
+  const activeGame = tab === 'daily' ? dailyGame : practice?.game
 
   // Reload when the day rolls over so a new puzzle appears.
   useEffect(() => {
@@ -174,26 +243,31 @@ export default function App() {
     return () => clearInterval(id)
   }, [today])
 
+  // Tint the whole page with the active game's colour.
+  useEffect(() => {
+    const color = activeGame?.color ?? '#6b7280'
+    document.documentElement.style.setProperty('--accent', color)
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color)
+  }, [activeGame])
+
   return (
-    <main>
-      <header>
-        <div>
-          <h1>Logicle</h1>
-          <p className="muted">
-            #{puzzleNumber(today)} ·{' '}
-            {today.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-          </p>
-        </div>
+    <div className="app">
+      <aside className="side">
+        <h1 className="logo">
+          Logic<span>le</span>
+        </h1>
         <nav className="toggle">
           <button className={tab === 'daily' ? 'active' : ''} onClick={() => setTab('daily')}>
-            Today
+            #{puzzleNumber(today)}
           </button>
           <button className={tab === 'practice' ? 'active' : ''} onClick={() => setTab('practice')}>
             Practice
           </button>
         </nav>
-      </header>
-      {tab === 'daily' ? <Daily today={today} /> : <Practice />}
-    </main>
+      </aside>
+      <main>
+        {tab === 'daily' ? <Daily today={today} game={dailyGame} /> : <Practice current={practice} onStart={setPractice} />}
+      </main>
+    </div>
   )
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createRng } from '../../lib/random.js'
+import { CrossIcon, SquareIcon } from '../../icons.jsx'
 import { generateNonogram, lineClue, SIZE } from './generate.js'
 
 const EMPTY = 0
@@ -42,48 +43,54 @@ export default function Nonogram({ seed, solved, onSolve }) {
       <div className="toolbar">
         <span />
         <div className="toggle">
-          <button className={!markMode ? 'active' : ''} onClick={() => setMarkMode(false)}>
-            ■ Fill
+          <button className={!markMode ? 'active' : ''} onClick={() => setMarkMode(false)} aria-label="Fill">
+            <SquareIcon />
           </button>
-          <button className={markMode ? 'active' : ''} onClick={() => setMarkMode(true)}>
-            ✕ Mark
+          <button className={markMode ? 'active' : ''} onClick={() => setMarkMode(true)} aria-label="Mark">
+            <CrossIcon />
           </button>
         </div>
       </div>
-      <div
-        className="nonogram"
-        style={{ '--cols': SIZE }}
-        onPointerUp={() => (paint.current = null)}
-        onPointerLeave={() => (paint.current = null)}
-      >
+      <div className="nonogram" style={{ '--cols': SIZE, '--rows': SIZE }}>
         <div />
-        {colClues.map((clue, c) => (
-          <div key={c} className={`clue col ${done(grid.map((row) => row[c]), clue) ? 'done' : ''}`}>
-            {clue.map((n, k) => (
-              <span key={k}>{n}</span>
-            ))}
-          </div>
-        ))}
-        {grid.map((row, r) => [
-          <div key={`clue${r}`} className={`clue row ${done(row, rowClues[r]) ? 'done' : ''}`}>
-            {rowClues[r].map((n, k) => (
-              <span key={k}>{n}</span>
-            ))}
-          </div>,
-          ...row.map((v, c) => (
-            <div
-              key={`${r}-${c}`}
-              className={`cell ${v === FILLED ? 'filled' : ''} ${c % 4 === 3 && c < SIZE - 1 ? 'edge-right' : ''} ${r % 4 === 3 && r < SIZE - 1 ? 'edge-bottom' : ''}`}
-              onPointerDown={(e) => startPaint(e, r, c, markMode || e.button === 2)}
-              onPointerEnter={() => paint.current !== null && !solved && setCell(r, c, paint.current)}
-              onContextMenu={(e) => e.preventDefault()}
-            >
-              {v === MARKED ? '✕' : ''}
+        <div className="col-clues">
+          {colClues.map((clue, c) => (
+            <div key={c} className={`clue ${done(grid.map((row) => row[c]), clue) ? 'done' : ''}`}>
+              {clue.map((n, k) => (
+                <span key={k}>{n}</span>
+              ))}
             </div>
-          )),
-        ])}
+          ))}
+        </div>
+        <div className="row-clues">
+          {rowClues.map((clue, r) => (
+            <div key={r} className={`clue ${done(grid[r], clue) ? 'done' : ''}`}>
+              {clue.map((n, k) => (
+                <span key={k}>{n}</span>
+              ))}
+            </div>
+          ))}
+        </div>
+        <div
+          className="board nonogram-grid"
+          onPointerUp={() => (paint.current = null)}
+          onPointerLeave={() => (paint.current = null)}
+        >
+          {grid.map((row, r) =>
+            row.map((v, c) => (
+              <div
+                key={`${r}-${c}`}
+                className={`cell ${v === FILLED ? 'filled' : ''} ${c % 5 === 4 && c < SIZE - 1 ? 'edge-right' : ''} ${r % 5 === 4 && r < SIZE - 1 ? 'edge-bottom' : ''}`}
+                onPointerDown={(e) => startPaint(e, r, c, markMode || e.button === 2)}
+                onPointerEnter={() => paint.current !== null && !solved && setCell(r, c, paint.current)}
+                onContextMenu={(e) => e.preventDefault()}
+              >
+                {v === MARKED && <CrossIcon />}
+              </div>
+            )),
+          )}
+        </div>
       </div>
-      <p className="hint">Click and drag to fill. Right-click or Mark mode for ✕.</p>
     </div>
   )
 }

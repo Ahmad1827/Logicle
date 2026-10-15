@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { createRng } from '../../lib/random.js'
+import { FlagIcon, MineIcon, SquareIcon } from '../../icons.jsx'
 import { generateMinesweeper, floodReveal, W, H, MINES } from './generate.js'
 
 export default function Minesweeper({ seed, solved, onSolve, onMistake }) {
@@ -41,30 +42,32 @@ export default function Minesweeper({ seed, solved, onSolve, onMistake }) {
   return (
     <div className="stack">
       <div className="toolbar">
-        <span>💣 {minesLeft} left</span>
+        <span className="count">
+          <MineIcon /> {minesLeft}
+        </span>
         <div className="toggle">
-          <button className={!flagMode ? 'active' : ''} onClick={() => setFlagMode(false)}>
-            Reveal
+          <button className={!flagMode ? 'active' : ''} onClick={() => setFlagMode(false)} aria-label="Reveal">
+            <SquareIcon />
           </button>
-          <button className={flagMode ? 'active' : ''} onClick={() => setFlagMode(true)}>
-            🚩 Flag
+          <button className={flagMode ? 'active' : ''} onClick={() => setFlagMode(true)} aria-label="Flag">
+            <FlagIcon />
           </button>
         </div>
       </div>
-      <div className="board mines" style={{ '--cols': W }}>
+      <div className="board mines" style={{ '--cols': W, '--rows': H }}>
         {mine.map((isMine, i) => {
           let content = ''
           let cls = 'cell hidden'
           if (exploded[i]) {
-            content = '💥'
+            content = <MineIcon />
             cls = 'cell exploded'
           } else if (revealed[i]) {
             cls = `cell open n${counts[i]}`
             content = counts[i] || ''
           } else if (solved && isMine) {
-            content = '💣'
+            content = <MineIcon />
           } else if (flagged[i]) {
-            content = '🚩'
+            content = <FlagIcon />
           }
           return (
             <button
@@ -81,7 +84,6 @@ export default function Minesweeper({ seed, solved, onSolve, onMistake }) {
           )
         })}
       </div>
-      <p className="hint">Right-click or use Flag mode to mark mines. No guessing is ever needed.</p>
     </div>
   )
 }

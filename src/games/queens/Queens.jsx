@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { createRng } from '../../lib/random.js'
+import { CrossIcon, CrownIcon } from '../../icons.jsx'
 import { generateQueens, SIZE } from './generate.js'
 
-const COLORS = ['#f4c2c2', '#bde0fe', '#cdeac0', '#ffe5a5', '#d9c7f2', '#ffd1a8', '#b9ebe4', '#e3e3e3']
+const COLORS = ['#ff9a8b', '#7ec4ff', '#9be58e', '#ffd65c', '#c8a2ff', '#ffb870', '#6fe0cf', '#f5a3d0']
 const EMPTY = 0
 const MARK = 1
 const QUEEN = 2
@@ -36,11 +37,11 @@ export default function Queens({ seed, solved, onSolve }) {
     if (result.queens.length === SIZE && result.bad.size === 0) onSolve()
   }
 
-  const border = (i, n) => (n === null || regions[n] !== regions[i] ? '2px solid var(--fg)' : '1px solid rgba(0,0,0,0.12)')
+  const border = (i, n) => (n === null || regions[n] !== regions[i] ? '2px solid #1f1d24' : '1px solid rgba(0, 0, 0, 0.12)')
 
   return (
     <div className="stack">
-      <div className="board queens" style={{ '--cols': SIZE }}>
+      <div className="board queens" style={{ '--cols': SIZE, '--rows': SIZE }}>
         {cells.map((v, i) => {
           const r = Math.floor(i / SIZE)
           const c = i % SIZE
@@ -57,12 +58,11 @@ export default function Queens({ seed, solved, onSolve }) {
               }}
               onClick={() => tap(i)}
             >
-              {v === QUEEN ? '♛' : v === MARK ? '✕' : ''}
+              {v === QUEEN ? <CrownIcon /> : v === MARK ? <CrossIcon /> : null}
             </button>
           )
         })}
       </div>
-      <p className="hint">Tap once for ✕, twice for a queen.</p>
     </div>
   )
 }

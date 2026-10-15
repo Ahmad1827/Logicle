@@ -1,4 +1,4 @@
-export const SIZE = 8
+export const SIZE = 10
 
 export function lineClue(line) {
   const clue = []
