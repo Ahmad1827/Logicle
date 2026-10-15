@@ -23,6 +23,14 @@ function markHelpSeen(id) {
   }
 }
 
+function useScrollIntoView() {
+  const ref = useRef(null)
+  useEffect(() => {
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }, [])
+  return ref
+}
+
 function useNow(interval = 1000) {
   const [now, setNow] = useState(Date.now)
   useEffect(() => {
@@ -112,6 +120,7 @@ function PuzzleRunner({ game, seed, onFinish }) {
 
 function DailyDone({ number, game, result, streak }) {
   const now = useNow()
+  const panel = useScrollIntoView()
   const [copied, setCopied] = useState(false)
   const text = [
     `Logicle #${number} · ${game.name}`,
@@ -131,7 +140,7 @@ function DailyDone({ number, game, result, streak }) {
   }
 
   return (
-    <div className="panel">
+    <div className="panel" ref={panel}>
       <div className="stats">
         <div>
           <b>{formatTime(result.time)}</b>
@@ -188,6 +197,23 @@ function Daily({ today, game }) {
   )
 }
 
+function PracticeDone({ result, onAgain }) {
+  const panel = useScrollIntoView()
+  return (
+    <div className="panel" ref={panel}>
+      <div className="stats">
+        <div>
+          <b>{formatTime(result.time)}</b>
+          <span>Time</span>
+        </div>
+      </div>
+      <button className="primary" onClick={onAgain}>
+        Again
+      </button>
+    </div>
+  )
+}
+
 function Practice({ current, onStart }) {
   const [result, setResult] = useState(null)
 
@@ -211,19 +237,7 @@ function Practice({ current, onStart }) {
         ))}
       </div>
       {current && <PuzzleRunner key={current.seed} game={current.game} seed={current.seed} onFinish={setResult} />}
-      {result && (
-        <div className="panel">
-          <div className="stats">
-            <div>
-              <b>{formatTime(result.time)}</b>
-              <span>Time</span>
-            </div>
-          </div>
-          <button className="primary" onClick={() => start(current.game)}>
-            Again
-          </button>
-        </div>
-      )}
+      {result && <PracticeDone result={result} onAgain={() => start(current.game)} />}
     </>
   )
 }

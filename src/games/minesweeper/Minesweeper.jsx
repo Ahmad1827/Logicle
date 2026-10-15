@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { createRng } from '../../lib/random.js'
 import { FlagIcon, MineIcon, SquareIcon } from '../../icons.jsx'
 import { generateMinesweeper, floodReveal, W, H, MINES } from './generate.js'
@@ -13,6 +13,24 @@ export default function Minesweeper({ seed, solved, onSolve, onMistake }) {
   const [flagged, setFlagged] = useState(() => Array(W * H).fill(false))
   const [exploded, setExploded] = useState(() => Array(W * H).fill(false))
   const [flagMode, setFlagMode] = useState(false)
+  const press = useRef(null) // long-press on touch screens flags a square
+
+  function startPress(e, i) {
+    if (e.pointerType !== 'touch') return
+    clearTimeout(press.current?.timer)
+    press.current = {
+      fired: false,
+      timer: setTimeout(() => {
+        press.current.fired = true
+        navigator.vibrate?.(15)
+        act(i, true)
+      }, 350),
+    }
+  }
+
+  function endPress() {
+    clearTimeout(press.current?.timer)
+  }
 
   function toggleFlag(i) {
     const next = [...flagged]
@@ -73,10 +91,20 @@ export default function Minesweeper({ seed, solved, onSolve, onMistake }) {
             <button
               key={i}
               className={cls}
-              onClick={() => act(i, flagMode)}
+              onPointerDown={(e) => startPress(e, i)}
+              onPointerUp={endPress}
+              onPointerLeave={endPress}
+              onPointerCancel={endPress}
+              onClick={() => {
+                if (press.current?.fired) {
+                  press.current = null
+                  return
+                }
+                act(i, flagMode)
+              }}
               onContextMenu={(e) => {
                 e.preventDefault()
-                act(i, true)
+                if (!press.current?.fired) act(i, true)
               }}
             >
               {content}

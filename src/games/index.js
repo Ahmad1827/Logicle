@@ -21,7 +21,7 @@ export const GAMES = [
     name: 'Minesweeper',
     color: '#f0812f',
     rules: 'Reveal every safe square. Each number shows how many of its 8 neighbours are mines.',
-    help: 'Switch to the flag (or right-click) to mark mines. No guessing is ever needed.',
+    help: 'Switch to the flag, long-press on a phone, or right-click to mark mines. No guessing is ever needed.',
     Component: Minesweeper,
     tracksMistakes: true,
   },

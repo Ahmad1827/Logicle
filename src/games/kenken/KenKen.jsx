@@ -120,7 +120,7 @@ export default function KenKen({ seed, solved, onSolve }) {
           )
         })}
       </div>
-      <div className="keypad" style={{ gridTemplateColumns: `repeat(${N}, 1fr)` }}>
+      <div className="keypad" style={{ '--keys': N }}>
         {Array.from({ length: N }, (_, k) => (
           <button key={k} onClick={() => enter(k + 1)} disabled={solved}>
             {k + 1}
