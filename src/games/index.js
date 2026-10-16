@@ -8,6 +8,7 @@ import Tents from './tents/Tents.jsx'
 import Futoshiki from './futoshiki/Futoshiki.jsx'
 import LightUp from './lightup/LightUp.jsx'
 import Hitori from './hitori/Hitori.jsx'
+import Miaudoku from './miaudoku/Miaudoku.jsx'
 
 // To add a game: build a component that takes { seed, solved, onSolve, onMistake }
 // and add it here. The daily rotation goes through this list in order.
@@ -92,6 +93,16 @@ export const GAMES = [
     rules: 'Shade squares so no number appears twice in a row or column. Shaded squares may not touch side by side, and all white squares must stay connected.',
     help: 'Tap once to shade, twice to circle a number you want to keep.',
     Component: Hitori,
+  },
+  {
+    id: 'miaudoku',
+    name: 'Miaudoku',
+    color: '#d0648f',
+    rules: 'Place exactly one cat in every row, every column and every coloured region. No two cats may touch, not even diagonally. A wrong cat costs one of your 3 lives.',
+    help: 'Tap to cross a square out, or drag to cross out several. Double-tap or long-press to place a cat (right-click on a computer). Auto-X crosses out every square your cats rule out, and Hint shows one logical step.',
+    Component: Miaudoku,
+    tracksMistakes: true,
+    mistakeChip: false,
   },
 ]
 

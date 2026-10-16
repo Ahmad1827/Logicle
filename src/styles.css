@@ -1000,6 +1000,89 @@ button.round {
   color: var(--error);
 }
 
+/* miaudoku: pastel tiles on white, dark lines between regions */
+.board.miaudoku {
+  --reserve: 220px;
+  padding: 4px;
+  background: #fff;
+  border: 3px solid var(--line-strong);
+  border-radius: 14px;
+  box-shadow: 0 4px 0 var(--tray);
+  touch-action: none;
+}
+
+.miaudoku .cell {
+  padding: 3px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.miaudoku .tile {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  border-radius: 18%;
+  color: rgba(31, 29, 36, 0.55);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.08);
+}
+
+.miaudoku .tile .icon {
+  width: 45%;
+  height: 45%;
+}
+
+.miaudoku .tile.cat .icon {
+  width: 82%;
+  height: 82%;
+}
+
+.miaudoku .cell.starter .tile {
+  box-shadow: inset 0 0 0 3px rgba(31, 29, 36, 0.35);
+}
+
+.miaudoku .cell.wrong .tile {
+  background: var(--error) !important;
+  color: #fff;
+  animation: shake 0.35s;
+}
+
+.board.miaudoku.out {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+@keyframes shake {
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.hearts {
+  display: flex;
+  gap: 4px;
+  font-size: 1.4rem;
+  color: var(--error);
+}
+
+.hearts .lost {
+  color: var(--line);
+}
+
+.out-of-lives {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+@media (prefers-color-scheme: dark) {
+  .board.miaudoku {
+    background: #2e2b35;
+  }
+}
+
 /* ---------- small phones ---------- */
 
 @media (max-width: 360px) {

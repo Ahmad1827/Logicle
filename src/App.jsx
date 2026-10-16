@@ -117,7 +117,7 @@ function PuzzleRunner({ game, seed, onFinish, onStep }) {
   return (
     <section>
       <GameHead game={game} onHelp={() => setShowHelp(true)} onStep={onStep}>
-        {game.tracksMistakes && mistakes > 0 && (
+        {game.tracksMistakes && game.mistakeChip !== false && mistakes > 0 && (
           <span className="chip bad" title="Mines hit">
             <MineIcon /> {mistakes}
           </span>

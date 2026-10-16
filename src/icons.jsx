@@ -126,3 +126,33 @@ export function ChevronIcon({ left }) {
     </svg>
   )
 }
+
+export function CatIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
+      <path d="M4 4.5l4.2 3.3h7.6L20 4.5l.6 7.5c.4 5-3.6 8.5-8.6 8.5S3 17 3.4 12z" fill="#f2a65a" stroke="#9a5a22" strokeWidth="1.2" strokeLinejoin="round" />
+      <path d="M5.4 6.6l2 1.6M18.6 6.6l-2 1.6" stroke="#f7c9cf" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M7.4 12.6q1.3-1.2 2.6 0M14 12.6q1.3-1.2 2.6 0" fill="none" stroke="#3b2414" strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M11.2 14.6h1.6l-.8.9z" fill="#e5737f" />
+      <path d="M12 15.5q-.9 1.3-2.2.7M12 15.5q.9 1.3 2.2.7" fill="none" stroke="#3b2414" strokeWidth="1" strokeLinecap="round" />
+      <path d="M11 9.6l1-1.4 1 1.4" fill="none" stroke="#c97a32" strokeWidth="1.1" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function HeartIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
+      <path d="M12 20.5S3 15 3 8.8A4.6 4.6 0 0112 7a4.6 4.6 0 019 1.8C21 15 12 20.5 12 20.5z" fill="currentColor" />
+    </svg>
+  )
+}
+
+export function BulbOutlineIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
+      <path d="M12 3a6.5 6.5 0 00-3.8 11.8V17h7.6v-2.2A6.5 6.5 0 0012 3z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M9.5 20.5h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
