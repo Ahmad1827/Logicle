@@ -1,6 +1,7 @@
 # Logicle
 
-A new logic puzzle every day: Mini Sudoku, Minesweeper, Nonogram, Queens, and so on.
+A new logic puzzle every day: Sudoku, Minesweeper, Nonogram, Queens, KenKen, Takuzu, Tents,
+Futoshiki, Light Up and Hitori.
 Everyone gets the same puzzle on the same day. Solve it, keep your streak, share your time.
 
 ## Run locally
@@ -20,7 +21,7 @@ npm run dev
 
 - Puzzle #1 is 2026-10-15. The puzzle number picks the game (rotating through `src/games/index.js`)
   and the date is the random seed, so every player gets the identical puzzle.
-- Every generator guarantees exactly one solution, reachable by logic alone (no guessing).
+- Every generator guarantees exactly one solution.
 - Results and streaks are stored in the browser's `localStorage`.
 
 ## Adding a game

@@ -366,29 +366,31 @@ button.round {
   from { transform: scale(0.94); opacity: 0; }
 }
 
-/* ---------- practice ---------- */
+/* ---------- practice: ‹ name › switcher ---------- */
 
-.game-list {
+.game-switch {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: -8px;
+}
+
+.game-switch button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 16px;
+  place-items: center;
+  background: transparent;
+  box-shadow: none;
+  font-size: 1.3rem;
+  color: var(--ink);
 }
 
-.game-list button {
-  padding: 12px 4px;
-  border-radius: 14px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  background: color-mix(in srgb, var(--accent) 16%, var(--tile));
-  color: color-mix(in srgb, var(--accent) 75%, var(--fg));
-  box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 45%, transparent);
-}
-
-.game-list button.active {
-  background: var(--accent);
-  color: #fff;
-  box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 70%, #000);
+@media (hover: hover) {
+  .game-switch button:hover {
+    background: var(--tray);
+  }
 }
 
 /* ---------- boards ----------
@@ -799,6 +801,205 @@ button.round {
   box-shadow: inset 0 0 0 3px var(--error);
 }
 
+/* tents: counts along the top and left of a grassy field */
+.board.tents {
+  --reserve: 150px;
+  gap: 3px;
+}
+
+.tents .count {
+  display: grid;
+  place-items: center;
+  font-size: calc(100cqw / var(--cols) * 0.45);
+  font-weight: 800;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  transition: opacity 0.2s;
+}
+
+.tents .count.done {
+  opacity: 0.3;
+}
+
+.tents .count.over {
+  color: var(--error);
+}
+
+.tents .cell {
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--tile));
+  color: #c2551a;
+  box-shadow: var(--shadow);
+}
+
+.tents .cell.grass {
+  background: color-mix(in srgb, var(--accent) 45%, var(--tile));
+  color: color-mix(in srgb, var(--accent) 60%, #000);
+}
+
+.tents .cell.tree {
+  background: color-mix(in srgb, var(--accent) 30%, var(--tile));
+  box-shadow: none;
+  cursor: default;
+}
+
+.tents .cell .icon {
+  width: 70%;
+  height: 70%;
+}
+
+.tents .cell.grass .icon {
+  width: 40%;
+  height: 40%;
+}
+
+.tents .cell.error {
+  background: var(--error-soft);
+  color: var(--error);
+}
+
+/* futoshiki: tiles with the signs sitting in the gaps between them */
+.board.futoshiki {
+  --reserve: 250px;
+  grid-template-columns: repeat(4, minmax(0, 3fr) minmax(0, 1fr)) minmax(0, 3fr);
+  grid-template-rows: repeat(4, minmax(0, 3fr) minmax(0, 1fr)) minmax(0, 3fr);
+}
+
+.futoshiki .cell {
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  color: var(--accent);
+}
+
+.futoshiki .cell.given {
+  color: var(--fg);
+  font-weight: 700;
+}
+
+.futoshiki .cell.related {
+  background: color-mix(in srgb, var(--accent) 10%, var(--tile));
+}
+
+.futoshiki .cell.selected {
+  background: color-mix(in srgb, var(--accent) 32%, var(--tile));
+}
+
+.futoshiki .cell.error {
+  color: var(--error);
+  background: var(--error-soft);
+}
+
+.futoshiki .sign {
+  display: grid;
+  place-items: center;
+  font-size: calc(100cqw / var(--cols) * 0.4);
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.futoshiki .sign.broken {
+  color: var(--error);
+}
+
+/* light up: black walls, lit squares glow yellow */
+.board.lightup {
+  --reserve: 150px;
+  gap: 3px;
+  padding: 5px;
+  background: var(--line-strong);
+  border-radius: 12px;
+}
+
+.lightup .cell {
+  border-radius: 4px;
+  color: var(--muted);
+  transition: background 0.15s;
+}
+
+.lightup .cell.lit {
+  background: #ffe9a3;
+  color: #b07900;
+}
+
+.lightup .cell.wall {
+  background: #1f1d24;
+  color: #fff;
+  font-weight: 800;
+  cursor: default;
+}
+
+.lightup .cell.wall.done {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.lightup .cell.wall.over {
+  color: #ff7b7f;
+}
+
+.lightup .cell .icon {
+  width: 62%;
+  height: 62%;
+}
+
+.lightup .cell.error {
+  background: var(--error-soft);
+  color: var(--error);
+}
+
+@media (prefers-color-scheme: dark) {
+  .lightup .cell {
+    background: #4a4752;
+  }
+
+  .lightup .cell.lit {
+    background: #5c4a12;
+    color: #ffd25c;
+  }
+
+  .lightup .cell.wall {
+    background: #0b0a0d;
+  }
+}
+
+/* hitori: shaded squares go dark, circled ones keep a ring */
+.board.hitori {
+  --reserve: 150px;
+  gap: 4px;
+  padding: 6px;
+  background: var(--tray);
+  border-radius: 14px;
+}
+
+.hitori .cell {
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  font-weight: 700;
+}
+
+.hitori .cell span {
+  width: 74%;
+  height: 74%;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.hitori .cell.shaded {
+  background: var(--line-strong);
+  color: var(--tray);
+  box-shadow: none;
+}
+
+.hitori .cell.circled span {
+  box-shadow: inset 0 0 0 3px var(--accent);
+}
+
+.hitori .cell.error {
+  background: var(--error-soft);
+  color: var(--error);
+}
+
 /* ---------- small phones ---------- */
 
 @media (max-width: 360px) {
@@ -933,10 +1134,6 @@ button.round {
 
   .tools {
     justify-content: flex-start;
-  }
-
-  .game-list {
-    grid-template-columns: repeat(3, 1fr);
   }
 
   .panel {

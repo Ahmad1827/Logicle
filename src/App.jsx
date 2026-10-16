@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { GAMES, gameForPuzzle } from './games/index.js'
 import { dayKey, formatTime, msUntilTomorrow, puzzleNumber } from './lib/daily.js'
 import { currentStreak, loadResults, saveResults } from './lib/stats.js'
-import { MineIcon } from './icons.jsx'
+import { ChevronIcon, MineIcon } from './icons.jsx'
 
 const SEEN_KEY = 'logicle-seen-help'
 
@@ -55,10 +55,22 @@ function HelpSheet({ game, onClose }) {
   )
 }
 
-function GameHead({ game, children, onHelp }) {
+function GameHead({ game, children, onHelp, onStep }) {
   return (
     <div className="game-head">
-      <h2>{game.name}</h2>
+      {onStep ? (
+        <div className="game-switch">
+          <button onClick={() => onStep(-1)} aria-label="Previous game">
+            <ChevronIcon left />
+          </button>
+          <h2>{game.name}</h2>
+          <button onClick={() => onStep(1)} aria-label="Next game">
+            <ChevronIcon />
+          </button>
+        </div>
+      ) : (
+        <h2>{game.name}</h2>
+      )}
       <div className="game-head-right">
         {children}
         {onHelp && (
@@ -71,7 +83,7 @@ function GameHead({ game, children, onHelp }) {
   )
 }
 
-function PuzzleRunner({ game, seed, onFinish }) {
+function PuzzleRunner({ game, seed, onFinish, onStep }) {
   const [showHelp, setShowHelp] = useState(() => !hasSeenHelp(game.id))
   // The clock starts once the rules sheet is closed.
   const start = useRef(showHelp ? null : Date.now())
@@ -104,7 +116,7 @@ function PuzzleRunner({ game, seed, onFinish }) {
 
   return (
     <section>
-      <GameHead game={game} onHelp={() => setShowHelp(true)}>
+      <GameHead game={game} onHelp={() => setShowHelp(true)} onStep={onStep}>
         {game.tracksMistakes && mistakes > 0 && (
           <span className="chip bad" title="Mines hit">
             <MineIcon /> {mistakes}
@@ -208,35 +220,33 @@ function PracticeDone({ result, onAgain }) {
         </div>
       </div>
       <button className="primary" onClick={onAgain}>
-        Again
+        New puzzle
       </button>
     </div>
   )
 }
 
+function newPractice(game) {
+  return { game, seed: `practice-${Date.now()}-${Math.random()}` }
+}
+
+// One puzzle at a time; the arrows beside the name switch to another game.
 function Practice({ current, onStart }) {
   const [result, setResult] = useState(null)
 
   function start(game) {
     setResult(null)
-    onStart({ game, seed: `practice-${Date.now()}-${Math.random()}` })
+    onStart(newPractice(game))
+  }
+
+  function step(dir) {
+    const n = GAMES.length
+    start(GAMES[(GAMES.indexOf(current.game) + dir + n) % n])
   }
 
   return (
     <>
-      <div className="game-list">
-        {GAMES.map((g) => (
-          <button
-            key={g.id}
-            className={current?.game === g ? 'active' : ''}
-            style={{ '--accent': g.color }}
-            onClick={() => start(g)}
-          >
-            {g.name}
-          </button>
-        ))}
-      </div>
-      {current && <PuzzleRunner key={current.seed} game={current.game} seed={current.seed} onFinish={setResult} />}
+      <PuzzleRunner key={current.seed} game={current.game} seed={current.seed} onFinish={setResult} onStep={step} />
       {result && <PracticeDone result={result} onAgain={() => start(current.game)} />}
     </>
   )
@@ -245,9 +255,9 @@ function Practice({ current, onStart }) {
 export default function App() {
   const [today] = useState(() => new Date())
   const [tab, setTab] = useState('daily')
-  const [practice, setPractice] = useState(null)
   const dailyGame = gameForPuzzle(puzzleNumber(today))
-  const activeGame = tab === 'daily' ? dailyGame : practice?.game
+  const [practice, setPractice] = useState(() => newPractice(dailyGame))
+  const activeGame = tab === 'daily' ? dailyGame : practice.game
 
   // Reload when the day rolls over so a new puzzle appears.
   useEffect(() => {

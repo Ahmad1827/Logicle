@@ -76,3 +76,53 @@ export function EraseIcon() {
     </svg>
   )
 }
+
+export function TreeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
+      <path d="M12 2.5l6.5 9h-3l4 6h-15l4-6h-3z" fill="#2f9e44" stroke="#1f6f30" strokeWidth="1.2" strokeLinejoin="round" />
+      <rect x="10.6" y="17.5" width="2.8" height="4" rx="0.6" fill="#8a5a2b" />
+    </svg>
+  )
+}
+
+export function TentIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
+      <path d="M12 4L2.5 20h19z" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M12 11l-3.5 9h7z" fill="rgba(255,255,255,0.85)" />
+    </svg>
+  )
+}
+
+export function BulbIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
+      <path d="M12 2.5a7 7 0 00-4 12.7V18h8v-2.8A7 7 0 0012 2.5z" fill="currentColor" />
+      <rect x="8.5" y="19" width="7" height="2.5" rx="1.1" fill="currentColor" opacity="0.7" />
+    </svg>
+  )
+}
+
+export function DotIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
+      <circle cx="12" cy="12" r="3.2" fill="currentColor" />
+    </svg>
+  )
+}
+
+export function ChevronIcon({ left }) {
+  return (
+    <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
+      <path
+        d={left ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}

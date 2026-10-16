@@ -4,6 +4,10 @@ import Nonogram from './nonogram/Nonogram.jsx'
 import Queens from './queens/Queens.jsx'
 import KenKen from './kenken/KenKen.jsx'
 import Takuzu from './takuzu/Takuzu.jsx'
+import Tents from './tents/Tents.jsx'
+import Futoshiki from './futoshiki/Futoshiki.jsx'
+import LightUp from './lightup/LightUp.jsx'
+import Hitori from './hitori/Hitori.jsx'
 
 // To add a game: build a component that takes { seed, solved, onSolve, onMistake }
 // and add it here. The daily rotation goes through this list in order.
@@ -56,6 +60,38 @@ export const GAMES = [
     rules: 'Fill every square with one of two colours. Each row and column has equal amounts of both, no three in a row of the same colour, and no two rows or columns are identical.',
     help: 'Tap a square to cycle: colour one, colour two, empty.',
     Component: Takuzu,
+  },
+  {
+    id: 'tents',
+    name: 'Tents',
+    color: '#74b816',
+    rules: 'Pitch one tent next to every tree (above, below, left or right). Tents never touch each other, not even diagonally. The numbers say how many tents are in each row and column.',
+    help: 'Tap once to mark grass, twice for a tent.',
+    Component: Tents,
+  },
+  {
+    id: 'futoshiki',
+    name: 'Futoshiki',
+    color: '#a0522d',
+    rules: 'Fill the grid with 1–5 so no number repeats in a row or column. Every < sign between two squares must hold: it points at the smaller number.',
+    help: 'Tap a square, then a number. Notes work like in Sudoku.',
+    Component: Futoshiki,
+  },
+  {
+    id: 'lightup',
+    name: 'Light Up',
+    color: '#e0a100',
+    rules: 'Place bulbs so every white square is lit. A bulb lights its whole row and column until a black square. No bulb may shine on another, and a number says how many bulbs touch that black square.',
+    help: 'Tap once to mark a square as no bulb, twice for a bulb.',
+    Component: LightUp,
+  },
+  {
+    id: 'hitori',
+    name: 'Hitori',
+    color: '#495057',
+    rules: 'Shade squares so no number appears twice in a row or column. Shaded squares may not touch side by side, and all white squares must stay connected.',
+    help: 'Tap once to shade, twice to circle a number you want to keep.',
+    Component: Hitori,
   },
 ]
 
