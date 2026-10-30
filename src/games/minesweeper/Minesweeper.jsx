@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import { vibrate } from '../../lib/native.js'
 import { createRng } from '../../lib/random.js'
 import { FlagIcon, MineIcon, SquareIcon } from '../../icons.jsx'
 import { generateMinesweeper, floodReveal, W, H, MINES } from './generate.js'
@@ -22,7 +23,7 @@ export default function Minesweeper({ seed, solved, onSolve, onMistake }) {
       fired: false,
       timer: setTimeout(() => {
         press.current.fired = true
-        navigator.vibrate?.(15)
+        vibrate()
         act(i, true)
       }, 350),
     }

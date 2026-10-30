@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { GAMES, gameForPuzzle } from './games/index.js'
 import { dayKey, formatTime, msUntilTomorrow, puzzleNumber } from './lib/daily.js'
+import { isNative, nativeShare, shareUrl, useBackButton, useBackCloses } from './lib/native.js'
 import { currentStreak, loadResults, saveResults } from './lib/stats.js'
 import { ChevronIcon, MineIcon } from './icons.jsx'
 
@@ -41,6 +42,7 @@ function useNow(interval = 1000) {
 }
 
 function HelpSheet({ game, onClose }) {
+  useBackCloses(onClose)
   return (
     <div className="overlay" onClick={onClose}>
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
@@ -138,10 +140,11 @@ function DailyDone({ number, game, result, streak }) {
     `Logicle #${number} · ${game.name}`,
     `Time ${formatTime(result.time)}` + (game.tracksMistakes ? ` · Mistakes ${result.mistakes}` : ''),
     `Streak ${streak}`,
-    window.location.origin + window.location.pathname,
+    shareUrl(),
   ].join('\n')
 
   async function share() {
+    if (isNative) return nativeShare(text)
     try {
       await navigator.clipboard.writeText(text)
       setCopied(true)
@@ -258,6 +261,11 @@ export default function App() {
   const dailyGame = gameForPuzzle(puzzleNumber(today))
   const [practice, setPractice] = useState(() => newPractice(dailyGame))
   const activeGame = tab === 'daily' ? dailyGame : practice.game
+
+  useBackButton(() => {
+    if (tab === 'daily') return false
+    setTab('daily')
+  })
 
   // Reload when the day rolls over so a new puzzle appears.
   useEffect(() => {

@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import { vibrate } from '../../lib/native.js'
 import { createRng } from '../../lib/random.js'
 import { BulbOutlineIcon, CatIcon, CrossIcon, HeartIcon } from '../../icons.jsx'
 import { generateMiaudoku } from './generate.js'
@@ -83,7 +84,7 @@ export default function Miaudoku({ seed, solved, onSolve, onMistake }) {
       timer: setTimeout(() => {
         if (press.current?.cell !== i || !press.current.dragging) return
         press.current.dragging = false
-        navigator.vibrate?.(15)
+        vibrate()
         placeCat(i)
       }, HOLD_MS),
     }

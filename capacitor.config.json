@@ -1,0 +1,11 @@
+{
+  "appId": "io.github.ahmad1827.logicle",
+  "appName": "Logicle",
+  "webDir": "dist",
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "native",
+      "initialViewportFitValueHint": "cover"
+    }
+  }
+}
