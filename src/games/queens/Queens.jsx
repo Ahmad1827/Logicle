@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
+import GameControls from '../../GameControls.jsx'
+import { useHistory } from '../../lib/history.js'
 import { createRng } from '../../lib/random.js'
 import { CrossIcon, CrownIcon } from '../../icons.jsx'
 import { generateQueens, SIZE } from './generate.js'
@@ -23,16 +25,17 @@ function findConflicts(cells, regions) {
   return { queens, bad }
 }
 
-export default function Queens({ seed, solved, onSolve }) {
+export default function Queens({ seed, solved, onSolve, onRandomize }) {
   const { regions } = useMemo(() => generateQueens(createRng(seed)), [seed])
-  const [cells, setCells] = useState(() => Array(SIZE * SIZE).fill(EMPTY))
+  const history = useHistory(() => Array(SIZE * SIZE).fill(EMPTY))
+  const cells = history.present
   const { bad } = findConflicts(cells, regions)
 
   function tap(i) {
     if (solved) return
     const next = [...cells]
     next[i] = (next[i] + 1) % 3
-    setCells(next)
+    history.commit(next)
     const result = findConflicts(next, regions)
     if (result.queens.length === SIZE && result.bad.size === 0) onSolve()
   }
@@ -63,6 +66,7 @@ export default function Queens({ seed, solved, onSolve }) {
           )
         })}
       </div>
+      <GameControls history={history} locked={solved} onRandomize={onRandomize} />
     </div>
   )
 }

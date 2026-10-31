@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import GameControls from '../../GameControls.jsx'
+import { useHistory } from '../../lib/history.js'
 import { createRng } from '../../lib/random.js'
 import { EraseIcon, PencilIcon } from '../../icons.jsx'
 import { cageSatisfied, generateKenKen, SIZE } from './generate.js'
@@ -19,10 +21,10 @@ function lineConflicts(grid) {
   return bad
 }
 
-export default function KenKen({ seed, solved, onSolve }) {
+export default function KenKen({ seed, solved, onSolve, onRandomize }) {
   const { solution, cages, cageOf } = useMemo(() => generateKenKen(createRng(seed)), [seed])
-  const [grid, setGrid] = useState(() => Array(N * N).fill(0))
-  const [notes, setNotes] = useState(() => Array(N * N).fill(0))
+  const history = useHistory(() => ({ grid: Array(N * N).fill(0), notes: Array(N * N).fill(0) }))
+  const { grid, notes } = history.present
   const [noteMode, setNoteMode] = useState(false)
   const [selected, setSelected] = useState(0)
   const bad = lineConflicts(grid)
@@ -40,12 +42,11 @@ export default function KenKen({ seed, solved, onSolve }) {
       if (grid[selected]) return
       const next = [...notes]
       next[selected] ^= 1 << value
-      setNotes(next)
+      history.commit({ grid, notes: next })
       return
     }
     const nextGrid = [...grid]
     nextGrid[selected] = value
-    setGrid(nextGrid)
     const nextNotes = [...notes]
     nextNotes[selected] = 0
     if (value) {
@@ -56,7 +57,7 @@ export default function KenKen({ seed, solved, onSolve }) {
         nextNotes[k * N + c] &= ~(1 << value)
       }
     }
-    setNotes(nextNotes)
+    history.commit({ grid: nextGrid, notes: nextNotes })
     if (nextGrid.every((v, i) => v === solution[i])) onSolve()
   }
 
@@ -135,6 +136,7 @@ export default function KenKen({ seed, solved, onSolve }) {
           <EraseIcon /> Erase
         </button>
       </div>
+      <GameControls history={history} locked={solved} onRandomize={onRandomize} />
     </div>
   )
 }

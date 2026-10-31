@@ -1,5 +1,6 @@
 /* Every colour derives from --accent, which App sets to the current game's colour. */
 :root {
+  --controls: 52px; /* height kept free for the undo / redo / reset bar */
   --accent: #4a7bf7;
   --base: #fbfaf8;
   --fg: #1f1d24;
@@ -419,7 +420,7 @@ button.round {
 
 .board {
   --reserve: 190px;
-  width: min(100%, calc(100dvh - var(--reserve)));
+  width: min(100%, calc(100dvh - var(--reserve) - var(--controls)));
   aspect-ratio: var(--cols) / var(--rows);
   display: grid;
   grid-template-columns: repeat(var(--cols), 1fr);
@@ -522,7 +523,7 @@ button.round {
 }
 
 .keypad {
-  width: min(100%, calc(100dvh - 250px));
+  width: min(100%, calc(100dvh - 250px - var(--controls)));
   display: grid;
   grid-template-columns: repeat(var(--keys, 9), 1fr);
   gap: 5px;
@@ -552,6 +553,33 @@ button.round {
 .tools button.active {
   background: var(--accent);
   color: #fff;
+}
+
+/* undo, redo, reset and new puzzle: same bar under every board */
+.game-controls {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.game-controls button {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px;
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+
+.game-controls .icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
 }
 
 /* minesweeper: coloured tiles are hidden, revealed squares sink into the tray */
@@ -638,7 +666,7 @@ button.round {
 
 /* nonogram: clues sit outside a classic ruled grid */
 .nonogram {
-  width: min(100%, calc(100dvh - 200px));
+  width: min(100%, calc(100dvh - 200px - var(--controls)));
   display: grid;
   grid-template-columns: auto 1fr;
   grid-template-rows: auto auto;
@@ -912,10 +940,11 @@ button.round {
 .futoshiki .sign {
   display: grid;
   place-items: center;
-  font-size: calc(100cqw / var(--cols) * 0.4);
+  font-size: calc(100cqw / var(--cols) * 0.3);
   font-weight: 800;
   color: var(--ink);
   line-height: 1;
+  contain: size; /* a sign must not stretch its row, or the board stops being square */
 }
 
 .futoshiki .sign.broken {
@@ -1237,6 +1266,16 @@ button.round {
 
   .tools {
     justify-content: flex-start;
+  }
+
+  /* The side column is narrow: four icons fit on one line, four labels don't. */
+  .game-controls span {
+    display: none;
+  }
+
+  .game-controls .icon {
+    width: 18px;
+    height: 18px;
   }
 
   .panel {

@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
+import GameControls from '../../GameControls.jsx'
+import { useHistory } from '../../lib/history.js'
 import { createRng } from '../../lib/random.js'
 import { generateHitori, neighbours, SIZE, whiteConnected } from './generate.js'
 
@@ -28,16 +30,17 @@ function check(numbers, cells) {
   return { bad, won: !repeats && bad.size === 0 && whiteConnected(shaded) }
 }
 
-export default function Hitori({ seed, solved, onSolve }) {
+export default function Hitori({ seed, solved, onSolve, onRandomize }) {
   const { numbers } = useMemo(() => generateHitori(createRng(seed)), [seed])
-  const [cells, setCells] = useState(() => Array(N * N).fill(EMPTY))
+  const history = useHistory(() => Array(N * N).fill(EMPTY))
+  const cells = history.present
   const { bad } = check(numbers, cells)
 
   function tap(i) {
     if (solved) return
     const next = [...cells]
     next[i] = (next[i] + 1) % 3
-    setCells(next)
+    history.commit(next)
     if (check(numbers, next).won) onSolve()
   }
 
@@ -54,6 +57,7 @@ export default function Hitori({ seed, solved, onSolve }) {
           </button>
         ))}
       </div>
+      <GameControls history={history} locked={solved} onRandomize={onRandomize} />
     </div>
   )
 }

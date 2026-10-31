@@ -10,8 +10,8 @@ import LightUp from './lightup/LightUp.jsx'
 import Hitori from './hitori/Hitori.jsx'
 import Miaudoku from './miaudoku/Miaudoku.jsx'
 
-// To add a game: build a component that takes { seed, solved, onSolve, onMistake }
-// and add it here. The daily rotation goes through this list in order.
+// To add a game: build a component that takes { seed, solved, onSolve, onMistake, onRandomize }
+// and renders GameControls, then add it here. The daily rotation goes through this list in order.
 export const GAMES = [
   {
     id: 'sudoku',
@@ -35,7 +35,7 @@ export const GAMES = [
     name: 'Nonogram',
     color: '#8b5cf6',
     rules: 'Fill squares so each row and column matches its clue: the lengths of the filled runs, in order.',
-    help: 'Drag to fill several squares at once. Switch to the cross (or right-click) to mark empty ones.',
+    help: 'Drag to fill several squares at once. Switch to the cross (or right-click) to mark empty ones. Finished rows and columns cross out their empty squares by themselves.',
     Component: Nonogram,
   },
   {

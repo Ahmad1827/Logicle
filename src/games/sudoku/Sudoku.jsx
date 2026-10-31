@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import GameControls from '../../GameControls.jsx'
+import { useHistory } from '../../lib/history.js'
 import { createRng } from '../../lib/random.js'
 import { EraseIcon, PencilIcon } from '../../icons.jsx'
 import { generateSudoku, N, BOX, PEERS } from './generate.js'
@@ -11,10 +13,10 @@ function conflicts(grid) {
   return bad
 }
 
-export default function Sudoku({ seed, solved, onSolve }) {
+export default function Sudoku({ seed, solved, onSolve, onRandomize }) {
   const { puzzle, solution } = useMemo(() => generateSudoku(createRng(seed)), [seed])
-  const [grid, setGrid] = useState(puzzle)
-  const [notes, setNotes] = useState(() => Array(N * N).fill(0)) // bitmask of pencil marks
+  const history = useHistory(() => ({ grid: puzzle, notes: Array(N * N).fill(0) })) // notes are bitmasks of pencil marks
+  const { grid, notes } = history.present
   const [noteMode, setNoteMode] = useState(false)
   const [selected, setSelected] = useState(puzzle.indexOf(0))
   const bad = conflicts(grid)
@@ -25,17 +27,16 @@ export default function Sudoku({ seed, solved, onSolve }) {
       if (grid[selected]) return
       const next = [...notes]
       next[selected] ^= 1 << value
-      setNotes(next)
+      history.commit({ grid, notes: next })
       return
     }
     const nextGrid = [...grid]
     nextGrid[selected] = value
-    setGrid(nextGrid)
     const nextNotes = [...notes]
     nextNotes[selected] = 0
     // Placing a number clears that number from the notes of every cell it sees.
     if (value) PEERS[selected].forEach((p) => (nextNotes[p] &= ~(1 << value)))
-    setNotes(nextNotes)
+    history.commit({ grid: nextGrid, notes: nextNotes })
     if (nextGrid.every((v, i) => v === solution[i])) onSolve()
   }
 
@@ -105,6 +106,7 @@ export default function Sudoku({ seed, solved, onSolve }) {
           <EraseIcon /> Erase
         </button>
       </div>
+      <GameControls history={history} locked={solved} onRandomize={onRandomize} />
     </div>
   )
 }

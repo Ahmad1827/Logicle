@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
+import GameControls from '../../GameControls.jsx'
+import { useHistory } from '../../lib/history.js'
 import { createRng } from '../../lib/random.js'
 import { generateTakuzu, SIZE } from './generate.js'
 
@@ -34,16 +36,17 @@ function findErrors(grid) {
   return bad
 }
 
-export default function Takuzu({ seed, solved, onSolve }) {
+export default function Takuzu({ seed, solved, onSolve, onRandomize }) {
   const { puzzle, solution } = useMemo(() => generateTakuzu(createRng(seed)), [seed])
-  const [grid, setGrid] = useState(puzzle)
+  const history = useHistory(puzzle)
+  const grid = history.present
   const bad = findErrors(grid)
 
   function tap(i) {
     if (solved || puzzle[i] !== EMPTY) return
     const next = [...grid]
     next[i] = next[i] === EMPTY ? 0 : next[i] === 0 ? 1 : EMPTY
-    setGrid(next)
+    history.commit(next)
     if (next.every((v, k) => v === solution[k])) onSolve()
   }
 
@@ -60,6 +63,7 @@ export default function Takuzu({ seed, solved, onSolve }) {
           </button>
         ))}
       </div>
+      <GameControls history={history} locked={solved} onRandomize={onRandomize} />
     </div>
   )
 }

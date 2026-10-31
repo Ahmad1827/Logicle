@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
+import GameControls from '../../GameControls.jsx'
+import { useHistory } from '../../lib/history.js'
 import { createRng } from '../../lib/random.js'
 import { DotIcon, TentIcon, TreeIcon } from '../../icons.jsx'
 import { around, generateTents, SIZE } from './generate.js'
@@ -8,9 +10,10 @@ const EMPTY = 0
 const GRASS = 1
 const TENT = 2
 
-export default function Tents({ seed, solved, onSolve }) {
+export default function Tents({ seed, solved, onSolve, onRandomize }) {
   const { trees, tents, rows, cols } = useMemo(() => generateTents(createRng(seed)), [seed])
-  const [cells, setCells] = useState(() => Array(N * N).fill(EMPTY))
+  const history = useHistory(() => Array(N * N).fill(EMPTY))
+  const cells = history.present
   const isTent = (i) => cells[i] === TENT
   const touching = new Set(cells.flatMap((v, i) => (v === TENT && around(i).some(isTent) ? [i] : [])))
   const rowTents = rows.map((_, r) => cells.slice(r * N, r * N + N).filter((v) => v === TENT).length)
@@ -21,7 +24,7 @@ export default function Tents({ seed, solved, onSolve }) {
     if (solved || trees.has(i)) return
     const next = [...cells]
     next[i] = (next[i] + 1) % 3
-    setCells(next)
+    history.commit(next)
     if (next.every((v, k) => (v === TENT) === tents.has(k))) onSolve()
   }
 
@@ -53,6 +56,7 @@ export default function Tents({ seed, solved, onSolve }) {
           }),
         ])}
       </div>
+      <GameControls history={history} locked={solved} onRandomize={onRandomize} />
     </div>
   )
 }

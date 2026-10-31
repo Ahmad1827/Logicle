@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
+import GameControls from '../../GameControls.jsx'
+import { useHistory } from '../../lib/history.js'
 import { createRng } from '../../lib/random.js'
 import { BulbIcon, DotIcon } from '../../icons.jsx'
 import { generateLightUp, neighbours, sightLines, SIZE, WHITE } from './generate.js'
@@ -29,16 +31,17 @@ function check(board, cells) {
   return { lit, bad, numbers, won }
 }
 
-export default function LightUp({ seed, solved, onSolve }) {
+export default function LightUp({ seed, solved, onSolve, onRandomize }) {
   const { board } = useMemo(() => generateLightUp(createRng(seed)), [seed])
-  const [cells, setCells] = useState(() => Array(N * N).fill(EMPTY))
+  const history = useHistory(() => Array(N * N).fill(EMPTY))
+  const cells = history.present
   const { lit, bad, numbers } = check(board, cells)
 
   function tap(i) {
     if (solved || board[i] !== WHITE) return
     const next = [...cells]
     next[i] = (next[i] + 1) % 3
-    setCells(next)
+    history.commit(next)
     if (check(board, next).won) onSolve()
   }
 
@@ -61,6 +64,7 @@ export default function LightUp({ seed, solved, onSolve }) {
           ),
         )}
       </div>
+      <GameControls history={history} locked={solved} onRandomize={onRandomize} />
     </div>
   )
 }

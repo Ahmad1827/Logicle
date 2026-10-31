@@ -127,6 +127,66 @@ export function ChevronIcon({ left }) {
   )
 }
 
+export function UndoIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
+      <path
+        d="M9 5L4 10l5 5M4 10h10a5.5 5.5 0 010 11h-3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+export function RedoIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
+      <path
+        d="M15 5l5 5-5 5M20 10H10a5.5 5.5 0 000 11h3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+export function ResetIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
+      <path
+        d="M4.5 12a7.5 7.5 0 107.5-7.5H7M10 1.5l-3 3 3 3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+export function ShuffleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
+      <path
+        d="M3 7h3.5c5 0 6 10 11 10H21M3 17h3.5c1.8 0 3-1.3 4-3M14 9c.9-1.2 2-2 3.5-2H21M18 4l3 3-3 3M18 14l3 3-3 3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 export function CatIcon() {
   return (
     <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">

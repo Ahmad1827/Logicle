@@ -1,18 +1,19 @@
 import { useMemo, useRef, useState } from 'react'
+import GameControls from '../../GameControls.jsx'
+import { useHistory } from '../../lib/history.js'
 import { vibrate } from '../../lib/native.js'
 import { createRng } from '../../lib/random.js'
 import { FlagIcon, MineIcon, SquareIcon } from '../../icons.jsx'
 import { generateMinesweeper, floodReveal, W, H, MINES } from './generate.js'
 
-export default function Minesweeper({ seed, solved, onSolve, onMistake }) {
+export default function Minesweeper({ seed, solved, onSolve, onMistake, onRandomize }) {
   const { mine, counts, start } = useMemo(() => generateMinesweeper(createRng(seed)), [seed])
-  const [revealed, setRevealed] = useState(() => {
-    const r = Array(W * H).fill(false)
-    floodReveal(start, r, counts)
-    return r
+  const history = useHistory(() => {
+    const revealed = Array(W * H).fill(false)
+    floodReveal(start, revealed, counts)
+    return { revealed, flagged: Array(W * H).fill(false), exploded: Array(W * H).fill(false) }
   })
-  const [flagged, setFlagged] = useState(() => Array(W * H).fill(false))
-  const [exploded, setExploded] = useState(() => Array(W * H).fill(false))
+  const { revealed, flagged, exploded } = history.present
   const [flagMode, setFlagMode] = useState(false)
   const press = useRef(null) // long-press on touch screens flags a square
 
@@ -36,7 +37,7 @@ export default function Minesweeper({ seed, solved, onSolve, onMistake }) {
   function toggleFlag(i) {
     const next = [...flagged]
     next[i] = !next[i]
-    setFlagged(next)
+    history.commit({ ...history.present, flagged: next })
   }
 
   function act(i, flag) {
@@ -46,13 +47,13 @@ export default function Minesweeper({ seed, solved, onSolve, onMistake }) {
     if (mine[i]) {
       const next = [...exploded]
       next[i] = true
-      setExploded(next)
+      history.commit({ ...history.present, exploded: next })
       onMistake()
       return
     }
     const next = [...revealed]
     floodReveal(i, next, counts, (j) => flagged[j] || mine[j])
-    setRevealed(next)
+    history.commit({ ...history.present, revealed: next })
     if (next.filter(Boolean).length === W * H - MINES) onSolve()
   }
 
@@ -113,6 +114,7 @@ export default function Minesweeper({ seed, solved, onSolve, onMistake }) {
           )
         })}
       </div>
+      <GameControls history={history} locked={solved} onRandomize={onRandomize} />
     </div>
   )
 }

@@ -1,4 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
+import GameControls from '../../GameControls.jsx'
+import { useHistory } from '../../lib/history.js'
 import { vibrate } from '../../lib/native.js'
 import { createRng } from '../../lib/random.js'
 import { BulbOutlineIcon, CatIcon, CrossIcon, HeartIcon } from '../../icons.jsx'
@@ -12,10 +14,11 @@ const LIVES = 3
 const HOLD_MS = 400
 const DOUBLE_TAP_MS = 300
 
-export default function Miaudoku({ seed, solved, onSolve, onMistake }) {
+export default function Miaudoku({ seed, solved, onSolve, onMistake, onRandomize }) {
   const { size, regions, cats, starter } = useMemo(() => generateMiaudoku(createRng(seed)), [seed])
   const fresh = () => Array.from({ length: size * size }, (_, i) => (i === starter ? CAT : EMPTY))
-  const [cells, setCells] = useState(fresh)
+  const history = useHistory(fresh)
+  const cells = history.present
   const [lives, setLives] = useState(LIVES)
   const [wrong, setWrong] = useState(null)
   const press = useRef(null)
@@ -33,35 +36,36 @@ export default function Miaudoku({ seed, solved, onSolve, onMistake }) {
       regions[a] === regions[b] ||
       (Math.abs(row(a) - row(b)) <= 1 && Math.abs(col(a) - col(b)) <= 1))
 
-  function update(next) {
-    setCells(next)
+  function update(next, group) {
+    history.commit(next, group)
     if (cats.every((i) => next[i] === CAT)) onSolve()
   }
 
-  function placeCat(i) {
+  // Pass the tap that led here as `group` so tap + cat undo as one step.
+  function placeCat(i, group) {
     if (locked || cells[i] === CAT) return
     const next = [...cells]
     if (solution.has(i)) {
       next[i] = CAT
-      update(next)
+      update(next, group)
       return
     }
     // A wrong cat costs a life, and the square gets crossed out.
     next[i] = MARK
-    setCells(next)
+    history.commit(next, group)
     setLives((n) => n - 1)
     setWrong(i)
     setTimeout(() => setWrong((w) => (w === i ? null : w)), 600)
     onMistake()
   }
 
-  function setMark(i, value) {
-    setCells((prev) => {
+  function setMark(i, value, group) {
+    history.commit((prev) => {
       if (prev[i] === CAT || prev[i] === value) return prev
       const next = [...prev]
       next[i] = value
       return next
-    })
+    }, group)
   }
 
   function down(e, i) {
@@ -73,22 +77,23 @@ export default function Miaudoku({ seed, solved, onSolve, onMistake }) {
     clearTimeout(last?.timer)
     if (last && last.cell === i && Date.now() - last.at < DOUBLE_TAP_MS) {
       press.current = null
-      return placeCat(i)
+      return placeCat(i, last)
     }
     const paint = cells[i] === MARK ? EMPTY : MARK
-    press.current = {
+    const current = {
       cell: i,
       at: Date.now(),
       paint,
       dragging: true,
       timer: setTimeout(() => {
-        if (press.current?.cell !== i || !press.current.dragging) return
-        press.current.dragging = false
+        if (press.current !== current || !current.dragging) return
+        current.dragging = false
         vibrate()
-        placeCat(i)
+        placeCat(i, current)
       }, HOLD_MS),
     }
-    setMark(i, paint)
+    press.current = current
+    setMark(i, paint, current)
   }
 
   function enter(i) {
@@ -96,7 +101,7 @@ export default function Miaudoku({ seed, solved, onSolve, onMistake }) {
     if (!p?.dragging || locked || p.cell === i) return
     clearTimeout(p.timer)
     p.at = 0 // a drag is never half of a double tap
-    setMark(i, p.paint)
+    setMark(i, p.paint, p)
   }
 
   function up() {
@@ -149,7 +154,7 @@ export default function Miaudoku({ seed, solved, onSolve, onMistake }) {
   }
 
   function retry() {
-    setCells(fresh())
+    history.reset()
     setLives(LIVES)
   }
 
@@ -201,6 +206,7 @@ export default function Miaudoku({ seed, solved, onSolve, onMistake }) {
           </div>
         ))}
       </div>
+      <GameControls history={history} locked={locked} onRandomize={onRandomize} />
       {out && (
         <div className="out-of-lives">
           <p>Out of lives!</p>

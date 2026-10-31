@@ -85,7 +85,7 @@ function GameHead({ game, children, onHelp, onStep }) {
   )
 }
 
-function PuzzleRunner({ game, seed, onFinish, onStep }) {
+function PuzzleRunner({ game, seed, onFinish, onStep, onRandomize }) {
   const [showHelp, setShowHelp] = useState(() => !hasSeenHelp(game.id))
   // The clock starts once the rules sheet is closed.
   const start = useRef(showHelp ? null : Date.now())
@@ -126,7 +126,7 @@ function PuzzleRunner({ game, seed, onFinish, onStep }) {
         )}
         <span className="chip">{formatTime(elapsed)}</span>
       </GameHead>
-      <game.Component seed={seed} solved={!!result} onSolve={onSolve} onMistake={onMistake} />
+      <game.Component seed={seed} solved={!!result} onSolve={onSolve} onMistake={onMistake} onRandomize={onRandomize} />
       {showHelp && <HelpSheet game={game} onClose={closeHelp} />}
     </section>
   )
@@ -249,7 +249,14 @@ function Practice({ current, onStart }) {
 
   return (
     <>
-      <PuzzleRunner key={current.seed} game={current.game} seed={current.seed} onFinish={setResult} onStep={step} />
+      <PuzzleRunner
+        key={current.seed}
+        game={current.game}
+        seed={current.seed}
+        onFinish={setResult}
+        onStep={step}
+        onRandomize={() => start(current.game)}
+      />
       {result && <PracticeDone result={result} onAgain={() => start(current.game)} />}
     </>
   )
