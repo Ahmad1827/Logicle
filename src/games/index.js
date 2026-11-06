@@ -9,6 +9,10 @@ import Futoshiki from './futoshiki/Futoshiki.jsx'
 import LightUp from './lightup/LightUp.jsx'
 import Hitori from './hitori/Hitori.jsx'
 import Miaudoku from './miaudoku/Miaudoku.jsx'
+import Skyscrapers from './skyscrapers/Skyscrapers.jsx'
+import Nurikabe from './nurikabe/Nurikabe.jsx'
+import Shikaku from './shikaku/Shikaku.jsx'
+import Bridges from './bridges/Bridges.jsx'
 
 // To add a game: build a component that takes { seed, solved, onSolve, onMistake, onRandomize }
 // and renders GameControls, then add it here. The daily rotation goes through this list in order.
@@ -103,6 +107,38 @@ export const GAMES = [
     Component: Miaudoku,
     tracksMistakes: true,
     mistakeChip: false,
+  },
+  {
+    id: 'skyscrapers',
+    name: 'Skyscrapers',
+    color: '#ae3ec9',
+    rules: 'Fill the grid with buildings 1–5 tall so no height repeats in a row or column. Each number outside says how many buildings you can see from there: taller buildings hide the shorter ones behind them.',
+    help: 'Tap a square, then a number. Notes work like in Sudoku. A clue fades once its line is full and correct.',
+    Component: Skyscrapers,
+  },
+  {
+    id: 'nurikabe',
+    name: 'Nurikabe',
+    color: '#1864ab',
+    rules: 'Shade squares to make the sea. Every number is an island of exactly that many squares, with one number per island. Islands never touch side by side, the sea is all connected, and it never forms a 2×2 block.',
+    help: 'Tap once for sea, twice to dot a square you know is island.',
+    Component: Nurikabe,
+  },
+  {
+    id: 'shikaku',
+    name: 'Shikaku',
+    color: '#e03131',
+    rules: 'Divide the grid into rectangles. Each rectangle holds exactly one number, and that number is its area in squares.',
+    help: 'Drag from one corner to the opposite corner to draw a rectangle. Tap a rectangle to remove it.',
+    Component: Shikaku,
+  },
+  {
+    id: 'bridges',
+    name: 'Bridges',
+    color: '#8c6d1f',
+    rules: 'Join the islands with straight bridges so each one has as many bridges as its number. Two islands share at most two bridges, bridges never cross, and every island must be reachable from every other.',
+    help: 'Tap an island, then a neighbour to add a bridge (or drag between them). Tap again for a double bridge, a third time to remove it.',
+    Component: Bridges,
   },
 ]
 

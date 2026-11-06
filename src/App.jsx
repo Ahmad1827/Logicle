@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { GAMES, gameForPuzzle } from './games/index.js'
+import { GAMES, gameForPuzzle, getGame } from './games/index.js'
 import { dayKey, formatTime, msUntilTomorrow, puzzleNumber } from './lib/daily.js'
 import { isNative, nativeShare, shareUrl, useBackButton, useBackCloses } from './lib/native.js'
 import { currentStreak, loadResults, saveResults } from './lib/stats.js'
@@ -180,12 +180,14 @@ function DailyDone({ number, game, result, streak }) {
   )
 }
 
-function Daily({ today, game }) {
+function Daily({ today, game: scheduled }) {
   const number = puzzleNumber(today)
   const key = dayKey(today)
   const [results, setResults] = useState(loadResults)
   const [playing] = useState(() => !loadResults()[key])
   const result = results[key]
+  // A day already solved shows the game that was played, even if the rotation has since changed.
+  const game = (result && getGame(result.game)) || scheduled
 
   const finish = useCallback(
     (r) => {

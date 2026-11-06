@@ -1132,6 +1132,275 @@ button.round {
   }
 }
 
+/* skyscrapers: tiles ringed by the view counts on all four sides */
+.board.skyscrapers {
+  --reserve: 250px;
+  gap: 4px;
+}
+
+.skyscrapers .count {
+  display: grid;
+  place-items: center;
+  font-size: calc(100cqw / var(--cols) * 0.48);
+  font-weight: 800;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  transition: opacity 0.2s, color 0.2s;
+}
+
+.skyscrapers .count.done {
+  opacity: 0.3;
+}
+
+.skyscrapers .count.over {
+  color: var(--error);
+}
+
+.skyscrapers .cell {
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  color: var(--accent);
+}
+
+.skyscrapers .cell.given {
+  color: var(--fg);
+  font-weight: 700;
+}
+
+.skyscrapers .cell.related {
+  background: color-mix(in srgb, var(--accent) 10%, var(--tile));
+}
+
+.skyscrapers .cell.selected {
+  background: color-mix(in srgb, var(--accent) 32%, var(--tile));
+}
+
+.skyscrapers .cell.error {
+  color: var(--error);
+  background: var(--error-soft);
+}
+
+/* nurikabe: numbered islands in a dark sea */
+.board.nurikabe {
+  --reserve: 150px;
+  gap: 3px;
+  padding: 5px;
+  background: var(--tray);
+  border-radius: 14px;
+}
+
+.nurikabe .cell {
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  color: var(--muted);
+  transition: background 0.12s;
+}
+
+.nurikabe .cell.sea {
+  background: var(--ink);
+  box-shadow: none;
+}
+
+.nurikabe .cell.clue {
+  font-weight: 800;
+  color: var(--ink);
+  box-shadow: none;
+  transition: color 0.2s;
+}
+
+.nurikabe .cell.clue.done {
+  color: color-mix(in srgb, var(--ink) 35%, var(--tile));
+}
+
+.nurikabe .cell.clue.over {
+  color: var(--error);
+}
+
+.nurikabe .cell .icon {
+  width: 45%;
+  height: 45%;
+}
+
+.nurikabe .cell.error {
+  background: var(--error-soft);
+  color: var(--error);
+}
+
+.nurikabe .cell.sea.error {
+  background: var(--error);
+}
+
+/* shikaku: drawn rectangles sit over a ruled grid, numbers on top */
+.board.shikaku {
+  --reserve: 150px;
+  position: relative;
+  background: var(--tile);
+  border: 2.5px solid var(--line-strong);
+  border-radius: 10px;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.shikaku .cell {
+  box-shadow: inset -1px -1px 0 var(--line);
+  background: transparent;
+  cursor: crosshair;
+}
+
+.shikaku .rect,
+.shikaku .number {
+  pointer-events: none;
+}
+
+.shikaku .rect {
+  margin: 3px;
+  border-radius: 8px;
+  z-index: 1;
+}
+
+.shikaku .rect.ok {
+  background: hsl(var(--hue) 75% 62% / 0.38);
+  box-shadow: inset 0 0 0 2.5px hsl(var(--hue) 60% 45%);
+}
+
+.shikaku .rect.wrong {
+  background: color-mix(in srgb, var(--error) 14%, transparent);
+  box-shadow: inset 0 0 0 2.5px var(--error);
+}
+
+.shikaku .rect.preview {
+  z-index: 3;
+  display: grid;
+  place-items: end;
+  padding: 4px 7px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  box-shadow: inset 0 0 0 2.5px var(--accent);
+  font-size: calc(100cqw / var(--cols) * 0.3);
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.shikaku .number {
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  font-size: calc(100cqw / var(--cols) * 0.5);
+  font-weight: 800;
+  color: var(--fg);
+}
+
+/* bridges: round islands joined by single or double lines */
+.board.bridges {
+  --reserve: 150px;
+  padding: 4px;
+  background: var(--soft);
+  border-radius: 14px;
+  touch-action: none;
+}
+
+.bridges .cell {
+  background: transparent;
+}
+
+.bridges .bridge {
+  position: relative;
+  z-index: 1;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  transform: none !important;
+  --inset: calc(100% / var(--span) / 2);
+  --w: max(3px, calc(100cqw / var(--cols) * 0.07));
+}
+
+.bridges .bridge::before,
+.bridges .bridge::after {
+  content: '';
+  position: absolute;
+  background: var(--ink);
+  border-radius: 99px;
+}
+
+.bridges .bridge.across::before,
+.bridges .bridge.across::after {
+  left: var(--inset);
+  right: var(--inset);
+  height: var(--w);
+  top: calc(50% - var(--w) / 2);
+}
+
+.bridges .bridge.down::before,
+.bridges .bridge.down::after {
+  top: var(--inset);
+  bottom: var(--inset);
+  width: var(--w);
+  left: calc(50% - var(--w) / 2);
+}
+
+.bridges .bridge::after {
+  display: none;
+}
+
+.bridges .bridge.double::after {
+  display: block;
+}
+
+.bridges .bridge.across.double::before {
+  top: calc(50% - var(--w) * 1.9);
+}
+
+.bridges .bridge.across.double::after {
+  top: calc(50% + var(--w) * 0.9);
+}
+
+.bridges .bridge.down.double::before {
+  left: calc(50% - var(--w) * 1.9);
+}
+
+.bridges .bridge.down.double::after {
+  left: calc(50% + var(--w) * 0.9);
+}
+
+.bridges .island {
+  z-index: 2;
+  place-self: center;
+  width: 82%;
+  aspect-ratio: 1;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--tile);
+  box-shadow: inset 0 0 0 2.5px var(--ink), var(--shadow);
+  font-size: calc(100cqw / var(--cols) * 0.42);
+  font-weight: 800;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  transform: none !important;
+}
+
+.bridges .island.target {
+  background: color-mix(in srgb, var(--accent) 22%, var(--tile));
+}
+
+.bridges .island.selected {
+  background: var(--accent);
+  color: #fff;
+}
+
+.bridges .island.done {
+  color: color-mix(in srgb, var(--ink) 40%, var(--tile));
+  box-shadow: inset 0 0 0 2.5px color-mix(in srgb, var(--ink) 40%, var(--tile)), var(--shadow);
+}
+
+.bridges .island.over {
+  background: var(--error-soft);
+  color: var(--error);
+  box-shadow: inset 0 0 0 2.5px var(--error), var(--shadow);
+}
+
 /* ---------- small phones ---------- */
 
 @media (max-width: 360px) {

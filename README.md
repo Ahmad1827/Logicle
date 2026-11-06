@@ -1,7 +1,7 @@
 # Logicle
 
 A new logic puzzle every day: Sudoku, Minesweeper, Nonogram, Queens, KenKen, Takuzu, Tents,
-Futoshiki, Light Up, Hitori and Miaudoku.
+Futoshiki, Light Up, Hitori, Miaudoku, Skyscrapers, Nurikabe, Shikaku and Bridges.
 Everyone gets the same puzzle on the same day. Solve it, keep your streak, share your time.
 
 ## Run locally
