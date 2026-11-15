@@ -1,5 +1,11 @@
 apply plugin: 'com.android.application'
 
+// Release signing. The upload key lives outside the repo; point LOGICLE_KEYSTORE at its
+// properties file (storeFile, storePassword, keyAlias, keyPassword) to use another location.
+def keystoreFile = file(System.getenv('LOGICLE_KEYSTORE') ?: "${System.getProperty('user.home')}/keys/logicle/keystore.properties")
+def keystore = new Properties()
+if (keystoreFile.exists()) keystoreFile.withInputStream { keystore.load(it) }
+
 android {
     namespace = "io.github.ahmad1827.logicle"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,8 +22,19 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (keystore['storeFile']) {
+                storeFile file(keystore['storeFile'])
+                storePassword keystore['storePassword']
+                keyAlias keystore['keyAlias']
+                keyPassword keystore['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
+            if (keystore['storeFile']) signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

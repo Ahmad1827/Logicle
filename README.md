@@ -25,6 +25,8 @@ the site, rebuild the app with one of these:
 
 ```sh
 npm run app:apk    # Android: writes android/app/build/outputs/apk/debug/app-debug.apk
+npm run app:aab    # Play Store: signed android/app/build/outputs/bundle/release/app-release.aab
+                   # (needs the upload key at ~/keys/logicle/keystore.properties, or LOGICLE_KEYSTORE)
 npm run app:sync   # Android + iOS: copies the latest build into both native projects
 ```
 
