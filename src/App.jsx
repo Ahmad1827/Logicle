@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { ActiveContext, useActive } from './lib/active.js'
 import { GAMES, gameForPuzzle, getGame } from './games/index.js'
 import { dayKey, formatTime, msUntilTomorrow, puzzleNumber } from './lib/daily.js'
-import { isNative, nativeShare, shareUrl, useBackButton, useBackCloses } from './lib/native.js'
+import { isNative, nativeShare, shareUrl, useBackButton, useBackCloses, usePlayerHere } from './lib/native.js'
 import { currentStreak, loadResults, saveResults } from './lib/stats.js'
-import { ChevronIcon, MineIcon } from './icons.jsx'
+import { BulbOutlineIcon, ChevronIcon, MineIcon } from './icons.jsx'
 
 const SEEN_KEY = 'logicle-seen-help'
 
@@ -40,6 +41,24 @@ function useNow(interval = 1000) {
   }, [interval])
   return now
 }
+
+// Time spent while `running` is true. Returns a function reading the total so far.
+function useStopwatch(running) {
+  const banked = useRef(0)
+  const since = useRef(null)
+  useEffect(() => {
+    if (!running) return
+    const t0 = Date.now()
+    since.current = t0
+    return () => {
+      banked.current += Date.now() - t0
+      since.current = null
+    }
+  }, [running])
+  return useCallback(() => banked.current + (since.current === null ? 0 : Date.now() - since.current), [])
+}
+
+const mistakeLabel = (game) => game.mistakeLabel ?? 'Mistakes'
 
 function HelpSheet({ game, onClose }) {
   useBackCloses(onClose)
@@ -86,35 +105,47 @@ function GameHead({ game, children, onHelp, onStep }) {
 }
 
 function PuzzleRunner({ game, seed, onFinish, onStep, onRandomize }) {
+  const active = useActive()
+  const here = usePlayerHere()
   const [showHelp, setShowHelp] = useState(() => !hasSeenHelp(game.id))
-  // The clock starts once the rules sheet is closed.
-  const start = useRef(showHelp ? null : Date.now())
   const done = useRef(false)
   const mistakesRef = useRef(0)
+  const hintsRef = useRef(0)
   const [mistakes, setMistakes] = useState(0)
+  const [hints, setHints] = useState(0)
   const [result, setResult] = useState(null)
-  const now = useNow()
+  // The clock only runs while you can see the board: not behind the rules sheet,
+  // not on the other tab, and not while the app or browser tab is in the background.
+  const elapsed = useStopwatch(active && here && !showHelp && !result)
+  useNow()
 
   function closeHelp() {
     markHelpSeen(game.id)
-    if (start.current === null) start.current = Date.now()
     setShowHelp(false)
   }
 
   const onSolve = useCallback(() => {
     if (done.current) return
     done.current = true
-    const r = { time: Date.now() - (start.current ?? Date.now()), mistakes: mistakesRef.current }
-    setResult(r)
-    onFinish(r)
-  }, [onFinish])
+    const time = elapsed()
+    // Games report a hint after making its move, so a hint that solves the puzzle
+    // arrives just after this. Wait for it before writing the result down.
+    queueMicrotask(() => {
+      const r = { time, mistakes: mistakesRef.current, hints: hintsRef.current }
+      setResult(r)
+      onFinish(r)
+    })
+  }, [onFinish, elapsed])
 
   const onMistake = useCallback(() => {
     mistakesRef.current++
     setMistakes(mistakesRef.current)
   }, [])
 
-  const elapsed = result ? result.time : start.current === null ? 0 : Math.max(0, now - start.current)
+  const onHint = useCallback(() => {
+    hintsRef.current++
+    setHints(hintsRef.current)
+  }, [])
 
   return (
     <section>
@@ -124,21 +155,35 @@ function PuzzleRunner({ game, seed, onFinish, onStep, onRandomize }) {
             <MineIcon /> {mistakes}
           </span>
         )}
-        <span className="chip">{formatTime(elapsed)}</span>
+        {hints > 0 && (
+          <span className="chip" title="Hints used">
+            <BulbOutlineIcon /> {hints}
+          </span>
+        )}
+        <span className="chip">{formatTime(result ? result.time : elapsed())}</span>
       </GameHead>
-      <game.Component seed={seed} solved={!!result} onSolve={onSolve} onMistake={onMistake} onRandomize={onRandomize} />
-      {showHelp && <HelpSheet game={game} onClose={closeHelp} />}
+      <game.Component
+        seed={seed}
+        solved={!!result}
+        onSolve={onSolve}
+        onMistake={onMistake}
+        onHint={onHint}
+        onRandomize={onRandomize}
+      />
+      {showHelp && active && <HelpSheet game={game} onClose={closeHelp} />}
     </section>
   )
 }
 
-function DailyDone({ number, game, result, streak }) {
+function DailyDone({ number, game, result, streak, onPractice }) {
   const now = useNow()
   const panel = useScrollIntoView()
   const [copied, setCopied] = useState(false)
   const text = [
     `Logicle #${number} · ${game.name}`,
-    `Time ${formatTime(result.time)}` + (game.tracksMistakes ? ` · Mistakes ${result.mistakes}` : ''),
+    `Time ${formatTime(result.time)}` +
+      (game.tracksMistakes ? ` · ${mistakeLabel(game)} ${result.mistakes}` : '') +
+      (result.hints ? ` · Hints ${result.hints}` : ''),
     `Streak ${streak}`,
     shareUrl(),
   ].join('\n')
@@ -164,7 +209,13 @@ function DailyDone({ number, game, result, streak }) {
         {game.tracksMistakes && (
           <div>
             <b>{result.mistakes}</b>
-            <span>Mistakes</span>
+            <span>{mistakeLabel(game)}</span>
+          </div>
+        )}
+        {result.hints > 0 && (
+          <div>
+            <b>{result.hints}</b>
+            <span>Hints</span>
           </div>
         )}
         <div>
@@ -175,12 +226,13 @@ function DailyDone({ number, game, result, streak }) {
       <button className="primary" onClick={share}>
         {copied ? 'Copied!' : 'Share'}
       </button>
+      <button onClick={() => onPractice(game)}>Play another {game.name}</button>
       <p className="muted">Next in {formatTime(msUntilTomorrow(new Date(now)))}</p>
     </div>
   )
 }
 
-function Daily({ today, game: scheduled }) {
+function Daily({ today, game: scheduled, onPractice }) {
   const number = puzzleNumber(today)
   const key = dayKey(today)
   const [results, setResults] = useState(loadResults)
@@ -203,13 +255,22 @@ function Daily({ today, game: scheduled }) {
   return (
     <>
       {playing ? (
-        <PuzzleRunner game={game} seed={`daily-${key}`} onFinish={finish} />
+        // "New" leaves today's puzzle paused where it is and opens a fresh one in Practice.
+        <PuzzleRunner game={game} seed={`daily-${key}`} onFinish={finish} onRandomize={() => onPractice(game)} />
       ) : (
         <GameHead game={game}>
           <span className="chip">Solved</span>
         </GameHead>
       )}
-      {result && <DailyDone number={number} game={game} result={result} streak={currentStreak(results, today)} />}
+      {result && (
+        <DailyDone
+          number={number}
+          game={game}
+          result={result}
+          streak={currentStreak(results, today)}
+          onPractice={onPractice}
+        />
+      )}
     </>
   )
 }
@@ -223,6 +284,12 @@ function PracticeDone({ result, onAgain }) {
           <b>{formatTime(result.time)}</b>
           <span>Time</span>
         </div>
+        {result.hints > 0 && (
+          <div>
+            <b>{result.hints}</b>
+            <span>Hints</span>
+          </div>
+        )}
       </div>
       <button className="primary" onClick={onAgain}>
         New puzzle
@@ -238,11 +305,12 @@ function newPractice(game) {
 // One puzzle at a time; the arrows beside the name switch to another game.
 function Practice({ current, onStart }) {
   const [result, setResult] = useState(null)
+  // A result belongs to one puzzle, so starting another (from here or the daily) hides it.
+  const shown = result?.seed === current.seed ? result : null
+  const seed = current.seed
+  const finish = useCallback((r) => setResult({ ...r, seed }), [seed])
 
-  function start(game) {
-    setResult(null)
-    onStart(newPractice(game))
-  }
+  const start = (game) => onStart(newPractice(game))
 
   function step(dir) {
     const n = GAMES.length
@@ -255,11 +323,11 @@ function Practice({ current, onStart }) {
         key={current.seed}
         game={current.game}
         seed={current.seed}
-        onFinish={setResult}
+        onFinish={finish}
         onStep={step}
         onRandomize={() => start(current.game)}
       />
-      {result && <PracticeDone result={result} onAgain={() => start(current.game)} />}
+      {shown && <PracticeDone result={shown} onAgain={() => start(current.game)} />}
     </>
   )
 }
@@ -269,7 +337,19 @@ export default function App() {
   const [tab, setTab] = useState('daily')
   const dailyGame = gameForPuzzle(puzzleNumber(today))
   const [practice, setPractice] = useState(() => newPractice(dailyGame))
+  // Practice mounts the first time it's opened, then stays mounted like the daily.
+  const [practiceOpened, setPracticeOpened] = useState(false)
   const activeGame = tab === 'daily' ? dailyGame : practice.game
+
+  function showTab(next) {
+    if (next === 'practice') setPracticeOpened(true)
+    setTab(next)
+  }
+
+  function practiseGame(game) {
+    setPractice(newPractice(game))
+    showTab('practice')
+  }
 
   useBackButton(() => {
     if (tab === 'daily') return false
@@ -298,16 +378,27 @@ export default function App() {
           Logic<span>le</span>
         </h1>
         <nav className="toggle">
-          <button className={tab === 'daily' ? 'active' : ''} onClick={() => setTab('daily')}>
+          <button className={tab === 'daily' ? 'active' : ''} onClick={() => showTab('daily')}>
             #{puzzleNumber(today)}
           </button>
-          <button className={tab === 'practice' ? 'active' : ''} onClick={() => setTab('practice')}>
+          <button className={tab === 'practice' ? 'active' : ''} onClick={() => showTab('practice')}>
             Practice
           </button>
         </nav>
       </aside>
       <main>
-        {tab === 'daily' ? <Daily today={today} game={dailyGame} /> : <Practice current={practice} onStart={setPractice} />}
+        <div hidden={tab !== 'daily'}>
+          <ActiveContext.Provider value={tab === 'daily'}>
+            <Daily today={today} game={dailyGame} onPractice={practiseGame} />
+          </ActiveContext.Provider>
+        </div>
+        {practiceOpened && (
+          <div hidden={tab !== 'practice'}>
+            <ActiveContext.Provider value={tab === 'practice'}>
+              <Practice current={practice} onStart={setPractice} />
+            </ActiveContext.Provider>
+          </div>
+        )}
       </main>
     </div>
   )

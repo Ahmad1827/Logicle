@@ -1401,6 +1401,259 @@ button.round {
   box-shadow: inset 0 0 0 2.5px var(--error), var(--shadow);
 }
 
+/* ---------- hints: a brief outline on whatever a hint just changed ---------- */
+
+.board .hinted,
+.board .cell.hinted {
+  outline: 3px solid var(--fg);
+  outline-offset: -3px;
+  animation: hinted 1.4s ease-out forwards;
+}
+
+@keyframes hinted {
+  0%,
+  55% { outline-color: var(--fg); }
+  100% { outline-color: transparent; }
+}
+
+/* pipes: tiles turn in place; the water lights up whatever it reaches */
+.board.pipes {
+  --reserve: 150px;
+  gap: 3px;
+  padding: 5px;
+  background: var(--tray);
+  border-radius: 14px;
+}
+
+.pipes .cell {
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.pipes svg {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.16s ease-out;
+}
+
+.pipes .pipe {
+  stroke: var(--line-strong);
+  stroke-width: 22;
+  fill: none;
+  opacity: 0.45;
+}
+
+.pipes .joint,
+.pipes .end {
+  fill: var(--line-strong);
+  opacity: 0.45;
+}
+
+.pipes .end {
+  fill: var(--tile);
+  stroke: var(--line-strong);
+  stroke-width: 9;
+  opacity: 0.6;
+}
+
+.pipes .source {
+  fill: var(--accent);
+}
+
+.pipes .wet .pipe,
+.pipes .wet .joint {
+  stroke: var(--accent);
+  fill: var(--accent);
+  opacity: 1;
+}
+
+.pipes .wet .joint {
+  stroke: none;
+}
+
+.pipes .wet .end {
+  fill: var(--accent);
+  stroke: var(--ink);
+  opacity: 1;
+}
+
+.board.pipes.solved .cell {
+  background: color-mix(in srgb, var(--accent) 12%, var(--tile));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pipes svg {
+    transition: none;
+  }
+}
+
+/* flip: lights on glow in the accent colour */
+.board.flip {
+  --reserve: 190px;
+  gap: 6px;
+  padding: 6px;
+  background: var(--tray);
+  border-radius: 16px;
+}
+
+.flip .cell {
+  border-radius: 10px;
+  background: var(--tile);
+  box-shadow: inset 0 -3px 0 var(--line);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.flip .cell.on {
+  background: var(--accent);
+  box-shadow: inset 0 -3px 0 var(--ink), 0 0 14px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.toolbar .muted-count {
+  color: var(--muted);
+}
+
+/* codebreaker: a column of guesses, each with its own row of marks */
+.codebreaker {
+  width: min(100%, 360px);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px;
+  background: var(--tray);
+  border-radius: 16px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.codebreaker .guess {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px;
+  height: 46px;
+  background: var(--tile);
+  border-radius: 11px;
+}
+
+.codebreaker .guess.spare {
+  background: transparent;
+  opacity: 0.45;
+}
+
+.codebreaker .guess.current {
+  box-shadow: inset 0 0 0 2.5px var(--accent);
+}
+
+.codebreaker .num {
+  width: 1.4em;
+  text-align: right;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.codebreaker .pegs {
+  display: flex;
+  gap: 7px;
+  flex: 1;
+}
+
+.peg {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: none;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.2);
+}
+
+.peg.empty {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--line);
+}
+
+.peg.hidden {
+  background: var(--tile);
+  box-shadow: inset 0 0 0 2px var(--line-strong);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.codebreaker .current .peg {
+  cursor: pointer;
+}
+
+.codebreaker .marks {
+  display: grid;
+  grid-template-columns: repeat(2, 10px);
+  gap: 4px;
+}
+
+.codebreaker .marks span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px var(--line);
+}
+
+.codebreaker .marks .exact {
+  background: var(--fg);
+  box-shadow: none;
+}
+
+.codebreaker .marks .near {
+  box-shadow: inset 0 0 0 2.5px var(--fg);
+}
+
+.codebreaker .check {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 0 var(--ink);
+}
+
+.toolbar .secret {
+  display: flex;
+  gap: 5px;
+}
+
+.toolbar .secret .peg {
+  width: 22px;
+  height: 22px;
+}
+
+.toolbar .count.small {
+  font-size: 0.95rem;
+}
+
+.palette {
+  display: flex;
+  gap: 6px;
+  width: min(100%, 360px);
+}
+
+.palette button {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+}
+
+.palette .peg {
+  width: 26px;
+  height: 26px;
+}
+
+.palette .icon {
+  width: 22px;
+  height: 22px;
+}
+
 /* ---------- small phones ---------- */
 
 @media (max-width: 360px) {
@@ -1490,7 +1743,8 @@ button.round {
   }
 
   section .stack > .board,
-  section .stack > .nonogram {
+  section .stack > .nonogram,
+  section .stack > .codebreaker {
     grid-column: 1;
     grid-row: 1 / span 8;
     width: min(calc(100dvh - 16px), 52vw);

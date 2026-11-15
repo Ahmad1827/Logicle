@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import GameControls from '../../GameControls.jsx'
+import { useFlash } from '../../lib/hint.js'
 import { useHistory } from '../../lib/history.js'
 import { createRng, range } from '../../lib/random.js'
 import { DotIcon } from '../../icons.jsx'
@@ -49,18 +50,39 @@ function check(clues, cells) {
   return { bad, clueState }
 }
 
-export default function Nurikabe({ seed, solved, onSolve, onRandomize }) {
+export default function Nurikabe({ seed, solved, onSolve, onHint, onRandomize }) {
   const { clues, sea } = useMemo(() => generateNurikabe(createRng(seed)), [seed])
   const history = useHistory(() => Array(N * N).fill(EMPTY))
   const cells = history.present
   const { bad, clueState } = check(clues, cells)
+  const [flashed, flash] = useFlash()
 
   function tap(i) {
     if (solved || clues.has(i)) return
     const next = [...cells]
     next[i] = (next[i] + 1) % 3
+    update(next)
+  }
+
+  function update(next) {
     history.commit(next)
     if (next.every((v, j) => (v === SEA) === sea[j])) onSolve()
+  }
+
+  // Fixes a wrong square, otherwise adds sea next to sea that's already there.
+  function hint() {
+    if (solved) return
+    let i = cells.findIndex((v, k) => v !== EMPTY && (v === SEA) !== sea[k])
+    if (i < 0) {
+      const missing = range(N * N).filter((k) => sea[k] && cells[k] !== SEA)
+      if (!missing.length) return
+      i = missing.find((k) => neighbours(k).some((j) => cells[j] === SEA)) ?? missing[0]
+    }
+    const next = [...cells]
+    next[i] = sea[i] ? SEA : DOT
+    update(next)
+    flash(i)
+    onHint()
   }
 
   return (
@@ -74,7 +96,7 @@ export default function Nurikabe({ seed, solved, onSolve, onRandomize }) {
           ) : (
             <button
               key={i}
-              className={`cell ${cells[i] === SEA ? 'sea' : ''} ${bad.has(i) ? 'error' : ''}`}
+              className={`cell ${cells[i] === SEA ? 'sea' : ''} ${bad.has(i) ? 'error' : ''} ${flashed === i ? 'hinted' : ''}`}
               onClick={() => tap(i)}
             >
               {cells[i] === DOT && <DotIcon />}
@@ -82,7 +104,7 @@ export default function Nurikabe({ seed, solved, onSolve, onRandomize }) {
           ),
         )}
       </div>
-      <GameControls history={history} locked={solved} onRandomize={onRandomize} />
+      <GameControls history={history} locked={solved} onHint={hint} onRandomize={onRandomize} />
     </div>
   )
 }

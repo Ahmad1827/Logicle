@@ -1,10 +1,14 @@
 import { useEffect } from 'react'
-import { RedoIcon, ResetIcon, ShuffleIcon, UndoIcon } from './icons.jsx'
+import { useActive } from './lib/active.js'
+import { BulbOutlineIcon, RedoIcon, ResetIcon, ShuffleIcon, UndoIcon } from './icons.jsx'
 
-// Undo, redo and reset for any board using useHistory. `onRandomize` is only
-// passed in Practice: the daily puzzle is the same for everyone.
-export default function GameControls({ history, locked, onRandomize }) {
+// Undo, redo, reset, hint and new puzzle for any board using useHistory.
+// `onHint` is the game's own hint; `onRandomize` starts a fresh puzzle of the same game.
+export default function GameControls({ history, locked, onHint, onRandomize }) {
+  const active = useActive()
+
   useEffect(() => {
+    if (!active) return
     function onKey(e) {
       if (locked || !(e.ctrlKey || e.metaKey)) return
       const key = e.key.toLowerCase()
@@ -28,8 +32,13 @@ export default function GameControls({ history, locked, onRandomize }) {
       <button onClick={history.reset} disabled={locked || !history.canReset} aria-label="Reset board">
         <ResetIcon /> <span>Reset</span>
       </button>
+      {onHint && (
+        <button onClick={onHint} disabled={locked} aria-label="Hint">
+          <BulbOutlineIcon /> <span>Hint</span>
+        </button>
+      )}
       {onRandomize && (
-        <button onClick={onRandomize} aria-label="New random puzzle">
+        <button onClick={onRandomize} aria-label="New puzzle">
           <ShuffleIcon /> <span>New</span>
         </button>
       )}

@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import GameControls from '../../GameControls.jsx'
+import { useFlash } from '../../lib/hint.js'
 import { useHistory } from '../../lib/history.js'
 import { createRng } from '../../lib/random.js'
 import { CrossIcon, CrownIcon } from '../../icons.jsx'
@@ -25,16 +26,39 @@ function findConflicts(cells, regions) {
   return { queens, bad }
 }
 
-export default function Queens({ seed, solved, onSolve, onRandomize }) {
-  const { regions } = useMemo(() => generateQueens(createRng(seed)), [seed])
+export default function Queens({ seed, solved, onSolve, onHint, onRandomize }) {
+  const { regions, queens } = useMemo(() => generateQueens(createRng(seed)), [seed])
   const history = useHistory(() => Array(SIZE * SIZE).fill(EMPTY))
   const cells = history.present
   const { bad } = findConflicts(cells, regions)
+  const [flashed, flash] = useFlash()
+  const answer = new Set(queens.map((c, r) => r * SIZE + c))
 
   function tap(i) {
     if (solved) return
     const next = [...cells]
     next[i] = (next[i] + 1) % 3
+    update(next)
+  }
+
+  // Takes away a wrong queen or cross, otherwise crowns the region with the least room left.
+  function hint() {
+    if (solved) return
+    let i = cells.findIndex((v, j) => (v === QUEEN) !== answer.has(j) && v !== EMPTY)
+    if (i < 0) {
+      const room = (j) => cells.filter((v, k) => regions[k] === regions[j] && v === EMPTY).length
+      const missing = [...answer].filter((j) => cells[j] !== QUEEN)
+      if (!missing.length) return
+      i = missing.reduce((best, j) => (room(j) < room(best) ? j : best))
+    }
+    const next = [...cells]
+    next[i] = answer.has(i) ? QUEEN : MARK
+    update(next)
+    flash(i)
+    onHint()
+  }
+
+  function update(next) {
     history.commit(next)
     const result = findConflicts(next, regions)
     if (result.queens.length === SIZE && result.bad.size === 0) onSolve()
@@ -51,7 +75,7 @@ export default function Queens({ seed, solved, onSolve, onRandomize }) {
           return (
             <button
               key={i}
-              className={`cell ${bad.has(i) ? 'error' : ''}`}
+              className={`cell ${bad.has(i) ? 'error' : ''} ${flashed === i ? 'hinted' : ''}`}
               style={{
                 background: COLORS[regions[i]],
                 borderTop: border(i, r > 0 ? i - SIZE : null),
@@ -66,7 +90,7 @@ export default function Queens({ seed, solved, onSolve, onRandomize }) {
           )
         })}
       </div>
-      <GameControls history={history} locked={solved} onRandomize={onRandomize} />
+      <GameControls history={history} locked={solved} onHint={hint} onRandomize={onRandomize} />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import GameControls from '../../GameControls.jsx'
+import { useFlash } from '../../lib/hint.js'
 import { useHistory } from '../../lib/history.js'
 import { createRng, range } from '../../lib/random.js'
 import { generateShikaku, rectCells, SIZE } from './generate.js'
@@ -17,6 +18,8 @@ const inside = (rect, i) => {
   return r >= rect.r0 && r <= rect.r1 && c >= rect.c0 && c <= rect.c1
 }
 
+const rectKey = (r) => `${r.r0}-${r.c0}-${r.r1}-${r.c1}`
+
 const overlaps = (a, b) => a.r0 <= b.r1 && b.r0 <= a.r1 && a.c0 <= b.c1 && b.c0 <= a.c1
 
 // A rectangle is right when it holds exactly one number and that number is its area.
@@ -27,12 +30,13 @@ function judge(clues, rect) {
   return { ok, clue: numbers[0] }
 }
 
-export default function Shikaku({ seed, solved, onSolve, onRandomize }) {
-  const { clues } = useMemo(() => generateShikaku(createRng(seed)), [seed])
+export default function Shikaku({ seed, solved, onSolve, onHint, onRandomize }) {
+  const { clues, rects: answer } = useMemo(() => generateShikaku(createRng(seed)), [seed])
   const history = useHistory([])
   const rects = history.present
   const [drag, setDrag] = useState(null) // { from, to }
   const dragRef = useRef(null)
+  const [flashed, flash] = useFlash()
   dragRef.current = drag
   // Colour each rectangle by the number it holds, so it keeps its colour while being redrawn.
   const hue = useMemo(() => new Map([...clues.keys()].map((i, k) => [i, (k * 137.5 + 20) % 360])), [clues])
@@ -50,7 +54,28 @@ export default function Shikaku({ seed, solved, onSolve, onRandomize }) {
         return
       }
     }
-    const next = [...rects.filter((r) => !overlaps(r, rect)), rect]
+    update([...rects.filter((r) => !overlaps(r, rect)), rect])
+  }
+
+  // Takes away a wrong rectangle, otherwise draws one of the right ones, smallest first.
+  function hint() {
+    if (solved) return
+    const wrong = rects.find((r) => !answer.some((a) => rectKey(a) === rectKey(r)))
+    if (wrong) {
+      update(rects.filter((r) => r !== wrong))
+      flash(rectKey(wrong))
+      return onHint()
+    }
+    const missing = answer
+      .filter((a) => !rects.some((r) => rectKey(r) === rectKey(a)))
+      .sort((a, b) => rectCells(a).length - rectCells(b).length)
+    if (!missing.length) return
+    update([...rects, missing[0]])
+    flash(rectKey(missing[0]))
+    onHint()
+  }
+
+  function update(next) {
     history.commit(next)
     const covered = next.reduce((n, r) => n + rectCells(r).length, 0)
     if (covered === N * N && next.every((r) => judge(clues, r).ok)) onSolve()
@@ -92,8 +117,8 @@ export default function Shikaku({ seed, solved, onSolve, onRandomize }) {
           const { ok, clue } = judge(clues, rect)
           return (
             <div
-              key={`${rect.r0}-${rect.c0}-${rect.r1}-${rect.c1}`}
-              className={`rect ${ok ? 'ok' : 'wrong'}`}
+              key={rectKey(rect)}
+              className={`rect ${ok ? 'ok' : 'wrong'} ${flashed === rectKey(rect) ? 'hinted' : ''}`}
               style={{ ...place(rect), '--hue': hue.get(clue) ?? 0 }}
             />
           )
@@ -109,7 +134,7 @@ export default function Shikaku({ seed, solved, onSolve, onRandomize }) {
           </span>
         ))}
       </div>
-      <GameControls history={history} locked={solved} onRandomize={onRandomize} />
+      <GameControls history={history} locked={solved} onHint={hint} onRandomize={onRandomize} />
     </div>
   )
 }

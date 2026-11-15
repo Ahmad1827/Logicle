@@ -1,12 +1,13 @@
 import { useMemo, useRef, useState } from 'react'
 import GameControls from '../../GameControls.jsx'
+import { useFlash } from '../../lib/hint.js'
 import { useHistory } from '../../lib/history.js'
 import { vibrate } from '../../lib/native.js'
 import { createRng } from '../../lib/random.js'
 import { FlagIcon, MineIcon, SquareIcon } from '../../icons.jsx'
-import { generateMinesweeper, floodReveal, W, H, MINES } from './generate.js'
+import { generateMinesweeper, floodReveal, neighbors, W, H, MINES } from './generate.js'
 
-export default function Minesweeper({ seed, solved, onSolve, onMistake, onRandomize }) {
+export default function Minesweeper({ seed, solved, onSolve, onMistake, onHint, onRandomize }) {
   const { mine, counts, start } = useMemo(() => generateMinesweeper(createRng(seed)), [seed])
   const history = useHistory(() => {
     const revealed = Array(W * H).fill(false)
@@ -16,6 +17,7 @@ export default function Minesweeper({ seed, solved, onSolve, onMistake, onRandom
   const { revealed, flagged, exploded } = history.present
   const [flagMode, setFlagMode] = useState(false)
   const press = useRef(null) // long-press on touch screens flags a square
+  const [flashed, flash] = useFlash()
 
   function startPress(e, i) {
     if (e.pointerType !== 'touch') return
@@ -57,6 +59,23 @@ export default function Minesweeper({ seed, solved, onSolve, onMistake, onRandom
     if (next.filter(Boolean).length === W * H - MINES) onSolve()
   }
 
+  // Takes down a wrong flag, otherwise opens a safe square at the edge of what's already open.
+  function hint() {
+    if (solved) return
+    const badFlag = flagged.findIndex((f, i) => f && !mine[i])
+    if (badFlag >= 0) {
+      toggleFlag(badFlag)
+      flash(badFlag)
+      return onHint()
+    }
+    const safe = mine.flatMap((m, i) => (!m && !revealed[i] ? [i] : []))
+    const i = safe.find((j) => neighbors(j).some((n) => revealed[n])) ?? safe[0]
+    if (i === undefined) return
+    act(i, false)
+    flash(i)
+    onHint()
+  }
+
   const minesLeft = MINES - flagged.filter(Boolean).length - exploded.filter(Boolean).length
 
   return (
@@ -89,6 +108,7 @@ export default function Minesweeper({ seed, solved, onSolve, onMistake, onRandom
           } else if (flagged[i]) {
             content = <FlagIcon />
           }
+          if (flashed === i) cls += ' hinted'
           return (
             <button
               key={i}
@@ -114,7 +134,7 @@ export default function Minesweeper({ seed, solved, onSolve, onMistake, onRandom
           )
         })}
       </div>
-      <GameControls history={history} locked={solved} onRandomize={onRandomize} />
+      <GameControls history={history} locked={solved} onHint={hint} onRandomize={onRandomize} />
     </div>
   )
 }

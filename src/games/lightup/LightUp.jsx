@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import GameControls from '../../GameControls.jsx'
+import { useFlash } from '../../lib/hint.js'
 import { useHistory } from '../../lib/history.js'
 import { createRng } from '../../lib/random.js'
 import { BulbIcon, DotIcon } from '../../icons.jsx'
@@ -31,18 +32,39 @@ function check(board, cells) {
   return { lit, bad, numbers, won }
 }
 
-export default function LightUp({ seed, solved, onSolve, onRandomize }) {
-  const { board } = useMemo(() => generateLightUp(createRng(seed)), [seed])
+export default function LightUp({ seed, solved, onSolve, onHint, onRandomize }) {
+  const { board, bulbs } = useMemo(() => generateLightUp(createRng(seed)), [seed])
   const history = useHistory(() => Array(N * N).fill(EMPTY))
   const cells = history.present
   const { lit, bad, numbers } = check(board, cells)
+  const [flashed, flash] = useFlash()
 
   function tap(i) {
     if (solved || board[i] !== WHITE) return
     const next = [...cells]
     next[i] = (next[i] + 1) % 3
+    update(next)
+  }
+
+  function update(next) {
     history.commit(next)
     if (check(board, next).won) onSolve()
+  }
+
+  // Fixes a wrong bulb or mark, otherwise places a bulb, beside a number if one still needs it.
+  function hint() {
+    if (solved) return
+    let i = cells.findIndex((v, k) => v !== EMPTY && (v === BULB) !== bulbs.has(k))
+    if (i < 0) {
+      const missing = [...bulbs].filter((k) => cells[k] !== BULB)
+      if (!missing.length) return
+      i = missing.find((k) => neighbours(k).some((j) => board[j] > 0)) ?? missing[0]
+    }
+    const next = [...cells]
+    next[i] = bulbs.has(i) ? BULB : MARK
+    update(next)
+    flash(i)
+    onHint()
   }
 
   return (
@@ -52,7 +74,7 @@ export default function LightUp({ seed, solved, onSolve, onRandomize }) {
           v === WHITE ? (
             <button
               key={i}
-              className={`cell ${lit.has(i) ? 'lit' : ''} ${bad.has(i) ? 'error' : ''}`}
+              className={`cell ${lit.has(i) ? 'lit' : ''} ${bad.has(i) ? 'error' : ''} ${flashed === i ? 'hinted' : ''}`}
               onClick={() => tap(i)}
             >
               {cells[i] === BULB ? <BulbIcon /> : cells[i] === MARK && !lit.has(i) ? <DotIcon /> : null}
@@ -64,7 +86,7 @@ export default function LightUp({ seed, solved, onSolve, onRandomize }) {
           ),
         )}
       </div>
-      <GameControls history={history} locked={solved} onRandomize={onRandomize} />
+      <GameControls history={history} locked={solved} onHint={hint} onRandomize={onRandomize} />
     </div>
   )
 }

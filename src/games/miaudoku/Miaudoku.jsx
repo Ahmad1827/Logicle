@@ -14,7 +14,7 @@ const LIVES = 3
 const HOLD_MS = 400
 const DOUBLE_TAP_MS = 300
 
-export default function Miaudoku({ seed, solved, onSolve, onMistake, onRandomize }) {
+export default function Miaudoku({ seed, solved, onSolve, onMistake, onHint, onRandomize }) {
   const { size, regions, cats, starter } = useMemo(() => generateMiaudoku(createRng(seed)), [seed])
   const fresh = () => Array.from({ length: size * size }, (_, i) => (i === starter ? CAT : EMPTY))
   const history = useHistory(fresh)
@@ -127,6 +127,7 @@ export default function Miaudoku({ seed, solved, onSolve, onMistake, onRandomize
   // or cross out a square whose cat would leave some row, column or region with no room.
   function hint() {
     if (locked) return
+    onHint()
     const badMark = cats.find((i) => cells[i] === MARK)
     if (badMark !== undefined) return update(cells.map((v, i) => (i === badMark ? EMPTY : v)))
     const open = candidates(cells)

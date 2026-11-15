@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import GameControls from '../../GameControls.jsx'
+import { useFlash } from '../../lib/hint.js'
 import { useHistory } from '../../lib/history.js'
 import { createRng } from '../../lib/random.js'
 import { generateHitori, neighbours, SIZE, whiteConnected } from './generate.js'
@@ -30,18 +31,36 @@ function check(numbers, cells) {
   return { bad, won: !repeats && bad.size === 0 && whiteConnected(shaded) }
 }
 
-export default function Hitori({ seed, solved, onSolve, onRandomize }) {
-  const { numbers } = useMemo(() => generateHitori(createRng(seed)), [seed])
+export default function Hitori({ seed, solved, onSolve, onHint, onRandomize }) {
+  const { numbers, shaded } = useMemo(() => generateHitori(createRng(seed)), [seed])
   const history = useHistory(() => Array(N * N).fill(EMPTY))
   const cells = history.present
   const { bad } = check(numbers, cells)
+  const [flashed, flash] = useFlash()
 
   function tap(i) {
     if (solved) return
     const next = [...cells]
     next[i] = (next[i] + 1) % 3
+    update(next)
+  }
+
+  function update(next) {
     history.commit(next)
     if (check(numbers, next).won) onSolve()
+  }
+
+  // Fixes a wrong shade or circle, otherwise shades one more square that has to go.
+  function hint() {
+    if (solved) return
+    let i = cells.findIndex((v, k) => v !== EMPTY && (v === SHADED) !== shaded[k])
+    if (i < 0) i = shaded.findIndex((s, k) => s && cells[k] !== SHADED)
+    if (i < 0) return
+    const next = [...cells]
+    next[i] = shaded[i] ? SHADED : CIRCLED
+    update(next)
+    flash(i)
+    onHint()
   }
 
   return (
@@ -50,14 +69,14 @@ export default function Hitori({ seed, solved, onSolve, onRandomize }) {
         {numbers.map((v, i) => (
           <button
             key={i}
-            className={`cell ${cells[i] === SHADED ? 'shaded' : cells[i] === CIRCLED ? 'circled' : ''} ${bad.has(i) ? 'error' : ''}`}
+            className={`cell ${cells[i] === SHADED ? 'shaded' : cells[i] === CIRCLED ? 'circled' : ''} ${bad.has(i) ? 'error' : ''} ${flashed === i ? 'hinted' : ''}`}
             onClick={() => tap(i)}
           >
             <span>{v}</span>
           </button>
         ))}
       </div>
-      <GameControls history={history} locked={solved} onRandomize={onRandomize} />
+      <GameControls history={history} locked={solved} onHint={hint} onRandomize={onRandomize} />
     </div>
   )
 }

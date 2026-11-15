@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import GameControls from '../../GameControls.jsx'
+import { useActive } from '../../lib/active.js'
 import { useHistory } from '../../lib/history.js'
+import { pickNumberHint, useFlash } from '../../lib/hint.js'
 import { createRng } from '../../lib/random.js'
 import { EraseIcon, PencilIcon } from '../../icons.jsx'
 import { generateSudoku, N, BOX, PEERS } from './generate.js'
@@ -13,11 +15,13 @@ function conflicts(grid) {
   return bad
 }
 
-export default function Sudoku({ seed, solved, onSolve, onRandomize }) {
+export default function Sudoku({ seed, solved, onSolve, onHint, onRandomize }) {
   const { puzzle, solution } = useMemo(() => generateSudoku(createRng(seed)), [seed])
   const history = useHistory(() => ({ grid: puzzle, notes: Array(N * N).fill(0) })) // notes are bitmasks of pencil marks
   const { grid, notes } = history.present
   const [noteMode, setNoteMode] = useState(false)
+  const [flashed, flash] = useFlash()
+  const active = useActive()
   const [selected, setSelected] = useState(puzzle.indexOf(0))
   const bad = conflicts(grid)
 
@@ -30,17 +34,33 @@ export default function Sudoku({ seed, solved, onSolve, onRandomize }) {
       history.commit({ grid, notes: next })
       return
     }
+    write(selected, value)
+  }
+
+  function write(i, value) {
     const nextGrid = [...grid]
-    nextGrid[selected] = value
+    nextGrid[i] = value
     const nextNotes = [...notes]
-    nextNotes[selected] = 0
+    nextNotes[i] = 0
     // Placing a number clears that number from the notes of every cell it sees.
-    if (value) PEERS[selected].forEach((p) => (nextNotes[p] &= ~(1 << value)))
+    if (value) PEERS[i].forEach((p) => (nextNotes[p] &= ~(1 << value)))
     history.commit({ grid: nextGrid, notes: nextNotes })
     if (nextGrid.every((v, i) => v === solution[i])) onSolve()
   }
 
+  // Fixes a wrong number, or fills in the square with the fewest options left.
+  function hint() {
+    if (solved) return
+    const i = pickNumberHint({ grid, solution, fixed: puzzle, selected, peers: PEERS, size: N })
+    if (i < 0) return
+    setSelected(i)
+    write(i, solution[i])
+    flash(i)
+    onHint()
+  }
+
   useEffect(() => {
+    if (!active) return
     function onKey(e) {
       if (e.key >= '1' && e.key <= '9') enter(Number(e.key))
       else if (['Backspace', 'Delete', '0'].includes(e.key)) enter(0)
@@ -74,6 +94,7 @@ export default function Sudoku({ seed, solved, onSolve, onRandomize }) {
           else if (v && v === selValue) classes.push('same')
           else if (r === selRow || c === selCol || box === selBox) classes.push('related')
           if (bad.has(i)) classes.push('error')
+      if (flashed === i) classes.push('hinted')
           if (c % BOX === BOX - 1 && c < N - 1) classes.push('edge-right')
           if (r % BOX === BOX - 1 && r < N - 1) classes.push('edge-bottom')
           return (
@@ -106,7 +127,7 @@ export default function Sudoku({ seed, solved, onSolve, onRandomize }) {
           <EraseIcon /> Erase
         </button>
       </div>
-      <GameControls history={history} locked={solved} onRandomize={onRandomize} />
+      <GameControls history={history} locked={solved} onHint={hint} onRandomize={onRandomize} />
     </div>
   )
 }

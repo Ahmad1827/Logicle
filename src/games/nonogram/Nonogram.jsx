@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import GameControls from '../../GameControls.jsx'
+import { useFlash } from '../../lib/hint.js'
 import { useHistory } from '../../lib/history.js'
 import { createRng } from '../../lib/random.js'
 import { CrossIcon, SquareIcon } from '../../icons.jsx'
@@ -9,12 +10,13 @@ const EMPTY = 0
 const FILLED = 1
 const MARKED = 2
 
-export default function Nonogram({ seed, solved, onSolve, onRandomize }) {
+export default function Nonogram({ seed, solved, onSolve, onHint, onRandomize }) {
   const { solution, rowClues, colClues } = useMemo(() => generateNonogram(createRng(seed)), [seed])
   const history = useHistory(() => Array.from({ length: SIZE }, () => Array(SIZE).fill(EMPTY)))
   const grid = history.present
   const [markMode, setMarkMode] = useState(false)
   const paint = useRef(null) // the drag in progress; also its undo group
+  const [flashed, flash] = useFlash()
 
   const done = (line, clue) => lineClue(line.map((v) => (v === FILLED ? 1 : 0))).join() === clue.join()
   const rowDone = rowClues.map((clue, r) => done(grid[r], clue))
@@ -36,6 +38,27 @@ export default function Nonogram({ seed, solved, onSolve, onRandomize }) {
     if (solved) return
     if (grid.every((row, r) => row.every((v, c) => (v === FILLED) === (solution[r][c] === 1)))) onSolve()
   }, [grid, solution, solved, onSolve])
+
+  // Fixes a wrong square, otherwise fills a square in the line with the least left to fill.
+  function hint() {
+    if (solved) return
+    const want = (r, c) => (solution[r][c] === 1 ? FILLED : MARKED)
+    const squares = grid.flatMap((row, r) => row.map((v, c) => [r, c, v]))
+    let pick = squares.find(([r, c, v]) => (v === FILLED || v === MARKED) && v !== want(r, c))
+    if (!pick) {
+      const left = (cells) => cells.filter(([r, c, v]) => v !== FILLED && solution[r][c] === 1).length
+      const rowLeft = rowClues.map((_, r) => left(squares.filter((q) => q[0] === r)))
+      const colLeft = colClues.map((_, c) => left(squares.filter((q) => q[1] === c)))
+      const todo = squares.filter(([r, c, v]) => v !== FILLED && solution[r][c] === 1)
+      if (!todo.length) return
+      const cost = ([r, c]) => Math.min(rowLeft[r], colLeft[c])
+      pick = todo.reduce((best, q) => (cost(q) < cost(best) ? q : best))
+    }
+    const [r, c] = pick
+    setCell(r, c, want(r, c))
+    flash(`${r}-${c}`)
+    onHint()
+  }
 
   function startPaint(e, r, c, mark) {
     if (solved) return
@@ -96,7 +119,7 @@ export default function Nonogram({ seed, solved, onSolve, onRandomize }) {
             row.map((v, c) => (
               <div
                 key={`${r}-${c}`}
-                className={`cell ${v === FILLED ? 'filled' : ''} ${c % 5 === 4 && c < SIZE - 1 ? 'edge-right' : ''} ${r % 5 === 4 && r < SIZE - 1 ? 'edge-bottom' : ''}`}
+                className={`cell ${v === FILLED ? 'filled' : ''} ${c % 5 === 4 && c < SIZE - 1 ? 'edge-right' : ''} ${r % 5 === 4 && r < SIZE - 1 ? 'edge-bottom' : ''} ${flashed === `${r}-${c}` ? 'hinted' : ''}`}
                 onPointerDown={(e) => startPaint(e, r, c, markMode || e.button === 2)}
                 onPointerEnter={() => dragOver(r, c)}
                 onContextMenu={(e) => e.preventDefault()}
@@ -107,7 +130,7 @@ export default function Nonogram({ seed, solved, onSolve, onRandomize }) {
           )}
         </div>
       </div>
-      <GameControls history={history} locked={solved} onRandomize={onRandomize} />
+      <GameControls history={history} locked={solved} onHint={hint} onRandomize={onRandomize} />
     </div>
   )
 }

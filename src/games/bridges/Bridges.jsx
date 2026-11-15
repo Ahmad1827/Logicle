@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import GameControls from '../../GameControls.jsx'
+import { useFlash } from '../../lib/hint.js'
 import { useHistory } from '../../lib/history.js'
 import { createRng, range } from '../../lib/random.js'
 import { connected, crosses, edgeKey, findEdges, generateBridges, SIZE } from './generate.js'
@@ -7,16 +8,17 @@ import { connected, crosses, edgeKey, findEdges, generateBridges, SIZE } from '.
 const N = SIZE
 const pos = (i) => ({ r: Math.floor(i / N), c: i % N })
 
-export default function Bridges({ seed, solved, onSolve, onRandomize }) {
-  const { islands, edges } = useMemo(() => {
-    const { islands } = generateBridges(createRng(seed))
-    return { islands, edges: findEdges(islands) }
+export default function Bridges({ seed, solved, onSolve, onHint, onRandomize }) {
+  const { islands, edges, answer } = useMemo(() => {
+    const { islands, bridges } = generateBridges(createRng(seed))
+    return { islands, edges: findEdges(islands), answer: Object.fromEntries(bridges.map((b) => [edgeKey(b.a, b.b), b.n])) }
   }, [seed])
   // Bridge counts keyed "a-b", kept as a plain object so the history can compare boards.
   const history = useHistory({})
   const count = history.present
   const [selected, setSelected] = useState(null)
   const dragFrom = useRef(null)
+  const [flashed, flash] = useFlash()
 
   const edgeBetween = (a, b) => edges.find((e) => edgeKey(e.a, e.b) === edgeKey(a, b))
   const degree = (a) => edges.reduce((n, e) => n + (e.a === a || e.b === a ? count[edgeKey(e.a, e.b)] ?? 0 : 0), 0)
@@ -29,6 +31,24 @@ export default function Bridges({ seed, solved, onSolve, onRandomize }) {
     if (!now && edges.some((f) => count[edgeKey(f.a, f.b)] && crosses(edge, f))) return
     const next = { ...count, [key]: (now + 1) % 3 }
     if (!next[key]) delete next[key]
+    update(next)
+  }
+
+  // Sets one wrong crossing right, otherwise builds a missing bridge in full.
+  function hint() {
+    if (solved) return
+    const key =
+      Object.keys(count).find((k) => count[k] !== answer[k]) ?? Object.keys(answer).find((k) => count[k] !== answer[k])
+    if (!key) return
+    const next = { ...count, [key]: answer[key] }
+    if (!next[key]) delete next[key]
+    update(next)
+    setSelected(null)
+    flash(key)
+    onHint()
+  }
+
+  function update(next) {
     history.commit(next)
     const done = [...islands].every(([a, need]) =>
       edges.reduce((n, e) => n + (e.a === a || e.b === a ? next[edgeKey(e.a, e.b)] ?? 0 : 0), 0) === need,
@@ -109,7 +129,7 @@ export default function Bridges({ seed, solved, onSolve, onRandomize }) {
           return (
             <button
               key={`i${i}`}
-              className={`island ${state} ${selected === i ? 'selected' : ''} ${targets.has(i) ? 'target' : ''}`}
+              className={`island ${state} ${selected === i ? 'selected' : ''} ${targets.has(i) ? 'target' : ''} ${flashed?.split('-').includes(String(i)) ? 'hinted' : ''}`}
               style={{ gridRow: pos(i).r + 1, gridColumn: pos(i).c + 1 }}
               onPointerDown={(e) => pressIsland(e, i)}
               onPointerEnter={() => enterIsland(i)}
@@ -119,7 +139,7 @@ export default function Bridges({ seed, solved, onSolve, onRandomize }) {
           )
         })}
       </div>
-      <GameControls history={history} locked={solved} onRandomize={onRandomize} />
+      <GameControls history={history} locked={solved} onHint={hint} onRandomize={onRandomize} />
     </div>
   )
 }

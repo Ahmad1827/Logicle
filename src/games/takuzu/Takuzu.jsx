@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import GameControls from '../../GameControls.jsx'
+import { useFlash } from '../../lib/hint.js'
 import { useHistory } from '../../lib/history.js'
 import { createRng } from '../../lib/random.js'
 import { generateTakuzu, SIZE } from './generate.js'
@@ -36,18 +37,44 @@ function findErrors(grid) {
   return bad
 }
 
-export default function Takuzu({ seed, solved, onSolve, onRandomize }) {
+export default function Takuzu({ seed, solved, onSolve, onHint, onRandomize }) {
   const { puzzle, solution } = useMemo(() => generateTakuzu(createRng(seed)), [seed])
   const history = useHistory(puzzle)
   const grid = history.present
   const bad = findErrors(grid)
+  const [flashed, flash] = useFlash()
 
   function tap(i) {
     if (solved || puzzle[i] !== EMPTY) return
     const next = [...grid]
     next[i] = next[i] === EMPTY ? 0 : next[i] === 0 ? 1 : EMPTY
+    update(next)
+  }
+
+  function update(next) {
     history.commit(next)
     if (next.every((v, k) => v === solution[k])) onSolve()
+  }
+
+  // Fixes a wrong disc, otherwise fills the empty square with the most filled squares in its lines.
+  function hint() {
+    if (solved) return
+    let i = grid.findIndex((v, k) => v !== EMPTY && v !== solution[k])
+    if (i < 0) {
+      const filled = (k) => {
+        const r = Math.floor(k / N)
+        const c = k % N
+        return grid.filter((v, j) => v !== EMPTY && (Math.floor(j / N) === r || j % N === c)).length
+      }
+      const empty = grid.flatMap((v, k) => (v === EMPTY ? [k] : []))
+      if (!empty.length) return
+      i = empty.reduce((best, k) => (filled(k) > filled(best) ? k : best))
+    }
+    const next = [...grid]
+    next[i] = solution[i]
+    update(next)
+    flash(i)
+    onHint()
   }
 
   return (
@@ -56,14 +83,14 @@ export default function Takuzu({ seed, solved, onSolve, onRandomize }) {
         {grid.map((v, i) => (
           <button
             key={i}
-            className={`cell ${puzzle[i] !== EMPTY ? 'given' : ''} ${bad.has(i) ? 'error' : ''}`}
+            className={`cell ${puzzle[i] !== EMPTY ? 'given' : ''} ${bad.has(i) ? 'error' : ''} ${flashed === i ? 'hinted' : ''}`}
             onClick={() => tap(i)}
           >
             {v !== EMPTY && <span className={`disc d${v}`} />}
           </button>
         ))}
       </div>
-      <GameControls history={history} locked={solved} onRandomize={onRandomize} />
+      <GameControls history={history} locked={solved} onHint={hint} onRandomize={onRandomize} />
     </div>
   )
 }

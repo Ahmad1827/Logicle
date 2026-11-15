@@ -13,9 +13,12 @@ import Skyscrapers from './skyscrapers/Skyscrapers.jsx'
 import Nurikabe from './nurikabe/Nurikabe.jsx'
 import Shikaku from './shikaku/Shikaku.jsx'
 import Bridges from './bridges/Bridges.jsx'
+import Pipes from './pipes/Pipes.jsx'
+import Flip from './flip/Flip.jsx'
+import Codebreaker from './codebreaker/Codebreaker.jsx'
 
-// To add a game: build a component that takes { seed, solved, onSolve, onMistake, onRandomize }
-// and renders GameControls, then add it here. The daily rotation goes through this list in order.
+// To add a game: build a component that takes { seed, solved, onSolve, onMistake, onHint, onRandomize }
+// and renders GameControls (pass it a hint function that calls onHint when it helps), then add it here. The daily rotation goes through this list in order.
 export const GAMES = [
   {
     id: 'sudoku',
@@ -139,6 +142,33 @@ export const GAMES = [
     rules: 'Join the islands with straight bridges so each one has as many bridges as its number. Two islands share at most two bridges, bridges never cross, and every island must be reachable from every other.',
     help: 'Tap an island, then a neighbour to add a bridge (or drag between them). Tap again for a double bridge, a third time to remove it.',
     Component: Bridges,
+  },
+  {
+    id: 'pipes',
+    name: 'Pipes',
+    color: '#0ca678',
+    rules: 'Turn the tiles until every pipe joins up. Water flows from the square in the middle and has to reach every tile, with no pipe left open-ended.',
+    help: 'Tap a tile to turn it clockwise (right-click turns it back). Tiles the water reaches light up.',
+    Component: Pipes,
+  },
+  {
+    id: 'flip',
+    name: 'Flip',
+    color: '#5f3dc4',
+    rules: 'Switch every light off. Pressing a square flips it and the squares directly above, below, left and right of it.',
+    help: 'The order you press in doesn’t matter, and pressing a square twice cancels out. Try to match the best move count.',
+    Component: Flip,
+  },
+  {
+    id: 'codebreaker',
+    name: 'Codebreaker',
+    color: '#e8590c',
+    rules: 'Crack the secret code of 4 colours (colours can repeat). After each guess, a filled dot means a colour in the right place and a ring means a right colour in the wrong place.',
+    help: 'Tap colours to fill your guess and tap a peg to take it out. Keys 1–6, Backspace and Enter work too. The count above tells you how many codes still fit what you know.',
+    Component: Codebreaker,
+    tracksMistakes: true,
+    mistakeChip: false,
+    mistakeLabel: 'Guesses',
   },
 ]
 

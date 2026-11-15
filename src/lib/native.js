@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { App as NativeApp } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
 import { Haptics, ImpactStyle } from '@capacitor/haptics'
@@ -48,4 +48,25 @@ export function useBackButton(goBack) {
       listener.then((l) => l.remove())
     }
   }, [])
+}
+
+// False while the player is away: the tab is hidden, the phone app is in the background,
+// or (on a computer) the browser window has lost focus. The timer stops while it's false.
+export function usePlayerHere() {
+  const check = () => document.visibilityState !== 'hidden' && (isNative || document.hasFocus())
+  const [here, setHere] = useState(check)
+  useEffect(() => {
+    const update = () => setHere(check())
+    document.addEventListener('visibilitychange', update)
+    window.addEventListener('focus', update)
+    window.addEventListener('blur', update)
+    const listener = isNative ? NativeApp.addListener('appStateChange', ({ isActive }) => setHere(isActive)) : null
+    return () => {
+      document.removeEventListener('visibilitychange', update)
+      window.removeEventListener('focus', update)
+      window.removeEventListener('blur', update)
+      listener?.then((l) => l.remove())
+    }
+  }, [])
+  return here
 }
